@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full bg-gray-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iFood - Delivery de Comida e Mercado</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ifood: {
+                            red: '#EA1D2C',
+                            darkRed: '#C21321',
+                            lightBg: '#F7F7F7',
+                            grayText: '#717171',
+                            darkText: '#3E3E3E'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ea1d2c;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans text-ifood-darkText antialiased selection:bg-red-100 selection:text-ifood-red">
+
+    <!-- TOP HEADER -->
+    <header class="sticky top-0 z-30 bg-white border-b border-gray-100 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16 gap-4">
+                
+                <!-- LOGO -->
+                <div class="flex items-center gap-6 cursor-pointer" onclick="app.showHome()">
+                    <span class="text-3xl font-extrabold tracking-tight text-ifood-red flex items-center">
+                        iFood <span class="w-2 h-2 rounded-full bg-ifood-red ml-0.5 inline-block animate-pulse"></span>
+                    </span>
+                </div>
+
+                <!-- ENDEREÇO SELECIONADO -->
+                <div class="hidden sm:flex items-center gap-2 cursor-pointer hover:bg-gray-50 px-3 py-1.5 rounded-lg border border-transparent hover:border-gray-200 transition" onclick="app.toggleAddressModal()">
+                    <i class="fa-solid fa-location-dot text-ifood-red text-lg"></i>
+                    <div class="text-left">
+                        <span class="text-xs text-gray-400 font-medium block leading-none">Entregar em</span>
+                        <span id="current-address" class="text-sm font-semibold text-gray-800 truncate max-w-[180px] sm:max-w-[220px] block">Rua das Flores, 123</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-xs text-ifood-red ml-1"></i>
+                </div>
+
+                <!-- BUSCA BARRA (DESKTOP) -->
+                <div class="flex-1 max-w-md hidden md:block">
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="desktop-search" oninput="app.handleSearch(this.value)" placeholder="Busque por prato ou restaurante" class="w-full bg-gray-100 text-sm pl-10 pr-4 py-2.5 rounded-lg border-0 focus:ring-2 focus:ring-ifood-red focus:bg-white transition-all outline-none">
+                    </div>
+                </div>
+
+                <!-- ACOES DIREITA (CARRINHO E RASTREIO) -->
+                <div class="flex items-center gap-3">
+                    <!-- Rastreio Ativo (Aparece se houver pedido) -->
+                    <button id="active-order-btn" onclick="app.showTracking()" class="hidden items-center gap-2 bg-red-50 text-ifood-red px-3 py-2 rounded-lg font-semibold text-sm hover:bg-red-100 transition animate-pulse">
+                        <i class="fa-solid fa-motorcycle"></i>
+                        <span class="hidden sm:inline">Acompanhar Pedido</span>
+                    </button>
+
+                    <!-- Carrinho -->
+                    <button onclick="app.toggleCartDrawer()" class="relative flex items-center gap-2 bg-ifood-red text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-ifood-darkRed transition shadow-sm">
+                        <i class="fa-solid fa-bag-shopping text-base"></i>
+                        <span class="hidden sm:inline">Carrinho</span>
+                        <span id="cart-badge" class="bg-white text-ifood-red text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center -mr-1">0</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- BUSCA MOBILE -->
+            <div class="pb-3 md:hidden">
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" id="mobile-search" oninput="app.handleSearch(this.value)" placeholder="Busque por prato ou restaurante" class="w-full bg-gray-100 text-sm pl-10 pr-4 py-2 rounded-lg border-0 focus:ring-2 focus:ring-ifood-red focus:bg-white outline-none">
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTAINER PRINCIPAL DE CONTEÚDO (SPA VIEWS) -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- VIEW 1: HOME PAGE -->
+        <section id="view-home" class="space-y-8">
+            
+            <!-- BANNER PROMOCIONAL -->
+            <div class="relative rounded-2xl overflow-hidden bg-gradient-to-r from-red-600 to-rose-500 text-white p-6 sm:p-8 shadow-md">
+                <div class="max-w-md space-y-2 z-10 relative">
+                    <span class="bg-white/20 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">Cupom Especial</span>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold leading-tight">Ganhou R$ 10 OFF no seu primeiro pedido!</h2>
+                    <p class="text-red-100 text-sm">Use o cupom <span class="font-bold underline">IFOOD10</span> no checkout.</p>
+                </div>
+                <i class="fa-solid fa-burger absolute -right-6 -bottom-6 text-9xl text-white/10 rotate-12 pointer-events-none"></i>
+            </div>
+
+            <!-- CATEGORIAS -->
+            <div>
+                <h3 class="text-lg font-bold text-gray-800 mb-4">Categorias</h3>
+                <div class="flex items-center gap-4 overflow-x-auto pb-2 hide-scrollbar" id="categories-container">
+                    <!-- Categorias renderizadas dinamicamente via JS -->
+                </div>
+            </div>
+
+            <!-- RESTAURANTES DESTAQUE / LISTA -->
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-bold text-gray-800" id="restaurants-title">Restaurantes Famosos</h3>
+                    <div class="flex items-center gap-2 text-sm text-gray-500">
+                        <span>Filtrar:</span>
+                        <select id="filter-sort" onchange="app.sortRestaurants(this.value)" class="bg-white border border-gray-200 rounded-lg px-2 py-1 text-sm font-medium focus:outline-none">
+                            <option value="rating">Melhor Avaliados</option>
+                            <option value="time">Entrega mais rápida</option>
+                            <option value="fee">Menor taxa</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Grid de Restaurantes -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="restaurants-grid">
+                    <!-- Restaurantes via JS -->
+                </div>
+            </div>
+
+        </section>
+
+        <!-- VIEW 2: CARDÁPIO DO RESTAURANTE -->
+        <section id="view-restaurant" class="hidden space-y-6">
+            <!-- Botão Voltar -->
+            <button onclick="app.showHome()" class="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-ifood-red transition">
+                <i class="fa-solid fa-arrow-left"></i> Voltar para Restaurantes
+            </button>
+
+            <!-- Header do Restaurante -->
+            <div id="restaurant-header-info" class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <!-- Informações Injetadas via JS -->
+            </div>
+
+            <!-- Categorias do Cardápio (Abas) -->
+            <div class="border-b border-gray-200 sticky top-16 bg-white/95 backdrop-blur z-20 pt-2">
+                <nav class="flex space-x-6 overflow-x-auto hide-scrollbar" id="menu-categories-nav">
+                    <!-- Tabs Injetadas via JS -->
+                </nav>
+            </div>
+
+            <!-- Lista de Pratos por Categoria -->
+            <div id="restaurant-menu-items" class="space-y-8">
+                <!-- Pratos do Menu Injetados via JS -->
+            </div>
+        </section>
+
+        <!-- VIEW 3: RASTREAMENTO DO PEDIDO -->
+        <section id="view-tracking" class="hidden space-y-6 max-w-3xl mx-auto">
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-md p-6 sm:p-8 space-y-6">
+                
+                <div class="flex items-center justify-between border-b pb-4">
+                    <div>
+                        <span class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Acompanhamento</span>
+                        <h2 class="text-2xl font-extrabold text-gray-800">Pedido <span id="track-order-id">#1234</span></h2>
+                    </div>
+                    <span id="track-status-badge" class="bg-yellow-100 text-yellow-800 text-xs font-bold px-3 py-1.5 rounded-full">
+                        Em Preparação
+                    </span>
+                </div>
+
+                <!-- LINHA DO TEMPO ANIMADA -->
+                <div class="py-4">
+                    <div class="grid grid-cols-4 relative text-center">
+                        <!-- Progress Bar Background -->
+                        <div class="absolute top-1/2 left-0 right-0 h-1 bg-gray-200 -translate-y-1/2 z-0"></div>
+                        <!-- Progress Bar Fill -->
+                        <div id="tracking-progress-fill" class="absolute top-1/2 left-0 h-1 bg-ifood-red -translate-y-1/2 z-0 transition-all duration-700" style="width: 33%;"></div>
+
+                        <!-- ETAPAS -->
+                        <div class="relative z-10 flex flex-col items-center gap-2">
+                            <div id="step-1-icon" class="w-10 h-10 rounded-full bg-ifood-red text-white flex items-center justify-center font-bold text-sm border-4 border-white shadow">
+                                <i class="fa-solid fa-check"></i>
+                            </div>
+                            <span class="text-xs font-semibold text-gray-800">Confirmado</span>
+                        </div>
+
+                        <div class="relative z-10 flex flex-col items-center gap-2">
+                            <div id="step-2-icon" class="w-10 h-10 rounded-full bg-ifood-red text-white flex items-center justify-center font-bold text-sm border-4 border-white shadow">
+                                <i class="fa-solid fa-utensils animate-spin"></i>
+                            </div>
+                            <span class="text-xs font-semibold text-gray-800">Em Preparação</span>
+                        </div>
+
+                        <div class="relative z-10 flex flex-col items-center gap-2">
+                            <div id="step-3-icon" class="w-10 h-10 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-bold text-sm border-4 border-white shadow">
+                                <i class="fa-solid fa-motorcycle"></i>
+                            </div>
+                            <span class="text-xs font-semibold text-gray-400">A Caminho</span>
+                        </div>
+
+                        <div class="relative z-10 flex flex-col items-center gap-2">
+                            <div id="step-4-icon" class="w-10 h-10 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-bold text-sm border-4 border-white shadow">
+                                <i class="fa-solid fa-house"></i>
+                            </div>
+                            <span class="text-xs font-semibold text-gray-400">Entregue</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TEMPO ESTIMADO & ENTREGADOR -->
+                <div class="bg-red-50/50 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 border border-red-100">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-ifood-red/10 text-ifood-red rounded-full flex items-center justify-center text-xl">
+                            <i class="fa-regular fa-clock"></i>
+                        </div>
+                        <div>
+                            <span class="text-xs text-gray-500 font-medium">Previsão de Entrega</span>
+                            <h4 id="track-eta" class="text-lg font-bold text-gray-800">25 - 35 min</h4>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-3 w-full sm:w-auto border-t sm:border-t-0 sm:border-l border-red-100 pt-3 sm:pt-0 sm:pl-4">
+                        <div class="w-10 h-10 bg-gray-200 rounded-full overflow-hidden flex-shrink-0">
+                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" class="w-full h-full object-cover" alt="Entregador">
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-400 font-medium">Seu entregador</p>
+                            <p id="driver-name" class="text-sm font-bold text-gray-800">Carlos Silva</p>
+                            <span class="text-xs text-yellow-600 font-bold"><i class="fa-solid fa-star text-xs"></i> 4.9</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MAPA SIMULADO ANIMADO -->
+                <div class="relative h-48 bg-slate-100 rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center">
+                    <div class="absolute inset-0 opacity-40 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px]"></div>
+                    <div class="relative z-10 text-center space-y-2">
+                        <div id="map-motoboy-icon" class="inline-block p-3 bg-ifood-red text-white rounded-full shadow-lg text-xl animate-bounce">
+                            <i class="fa-solid fa-motorcycle"></i>
+                        </div>
+                        <p class="text-xs font-semibold text-gray-600 bg-white/80 backdrop-blur px-3 py-1 rounded-full border">O entregador está à caminho do seu endereço...</p>
+                    </div>
+                </div>
+
+                <!-- RESUMO COMPACTO DO PEDIDO -->
+                <div class="border-t pt-4">
+                    <h4 class="font-bold text-sm text-gray-800 mb-2">Resumo dos itens</h4>
+                    <ul id="track-items-list" class="text-sm text-gray-600 divide-y divide-gray-100">
+                        <!-- Itens do Pedido Ativo -->
+                    </ul>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- DRAWER / SIDEBAR DO CARRINHO -->
+    <div id="cart-drawer-overlay" onclick="app.toggleCartDrawer()" class="fixed inset-0 bg-black/50 z-40 hidden transition-opacity duration-300 opacity-0"></div>
+    <aside id="cart-drawer" class="fixed right-0 top-0 bottom-0 w-full sm:w-96 bg-white z-50 shadow-2xl flex flex-col transform translate-x-full transition-transform duration-300 ease-in-out">
+        
+        <!-- Header Carrinho -->
+        <div class="p-4 border-b flex items-center justify-between bg-gray-50">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-bag-shopping text-ifood-red text-lg"></i>
+                <h3 class="font-bold text-lg text-gray-800">Seu Carrinho</h3>
+            </div>
+            <button onclick="app.toggleCartDrawer()" class="text-gray-400 hover:text-gray-600 text-xl font-bold p-1">
+                &times;
+            </button>
+        </div>
+
+        <!-- Conteúdo do Carrinho -->
+        <div id="cart-items-container" class="flex-1 overflow-y-auto p-4 space-y-4">
+            <!-- Renderizado via JS -->
+        </div>
+
+        <!-- Rodapé do Carrinho / Checkout -->
+        <div id="cart-footer" class="p-4 border-t bg-gray-50 space-y-3">
+            <!-- Cupom de Desconto -->
+            <div class="flex gap-2">
+                <input type="text" id="coupon-input" placeholder="Cupom (ex: IFOOD10)" class="flex-1 border rounded-lg px-3 py-2 text-sm uppercase outline-none focus:border-ifood-red">
+                <button onclick="app.applyCoupon()" class="bg-gray-800 text-white text-xs font-bold px-3 rounded-lg hover:bg-black transition">Aplicar</button>
+            </div>
+            <div id="coupon-message" class="text-xs font-semibold hidden"></div>
+
+            <!-- Totais -->
+            <div class="space-y-1.5 text-sm">
+                <div class="flex justify-between text-gray-600">
+                    <span>Subtotal</span>
+                    <span id="cart-subtotal">R$ 0,00</span>
+                </div>
+                <div class="flex justify-between text-gray-600">
+                    <span>Taxa de Entrega</span>
+                    <span id="cart-delivery-fee">R$ 0,00</span>
+                </div>
+                <div id="discount-row" class="flex justify-between text-green-600 font-semibold hidden">
+                    <span>Desconto Cupom</span>
+                    <span id="cart-discount">- R$ 0,00</span>
+                </div>
+                <div class="flex justify-between font-extrabold text-base text-gray-800 border-t pt-2">
+                    <span>Total</span>
+                    <span id="cart-total" class="text-ifood-red">R$ 0,00</span>
+                </div>
+            </div>
+
+            <!-- Botão Avançar Checkout -->
+            <button onclick="app.openCheckoutModal()" class="w-full bg-ifood-red hover:bg-ifood-darkRed text-white font-bold py-3 rounded-xl transition shadow-md flex items-center justify-center gap-2">
+                <span>Finalizar Pedido</span>
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+
+    </aside>
+
+    <!-- MODAL DE DETALHES DO PRODUTO (Personalização) -->
+    <div id="product-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl animate-fade-in">
+            <div class="relative h-48 sm:h-56">
+                <img id="modal-product-img" src="" class="w-full h-full object-cover" alt="Produto">
+                <button onclick="app.closeProductModal()" class="absolute top-3 right-3 bg-white/80 hover:bg-white text-gray-700 w-8 h-8 rounded-full flex items-center justify-center font-bold backdrop-blur transition">
+                    &times;
+                </button>
+            </div>
+            <div class="p-5 flex-1 overflow-y-auto space-y-4">
+                <div>
+                    <h3 id="modal-product-title" class="text-xl font-bold text-gray-800"></h3>
+                    <p id="modal-product-desc" class="text-sm text-gray-500 mt-1"></p>
+                    <p id="modal-product-price" class="text-lg font-extrabold text-ifood-red mt-2"></p>
+                </div>
+
+                <!-- Opções Adicionais -->
+                <div class="border-t pt-3">
+                    <h4 class="font-bold text-sm text-gray-800 mb-2">Adicionais</h4>
+                    <div class="space-y-2" id="modal-product-extras">
+                        <label class="flex items-center justify-between text-sm p-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" value="5.0" class="extra-option rounded text-ifood-red focus:ring-ifood-red">
+                                <span>Molho Especial da Casa</span>
+                            </div>
+                            <span class="font-semibold text-gray-600">+ R$ 5,00</span>
+                        </label>
+                        <label class="flex items-center justify-between text-sm p-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" value="8.0" class="extra-option rounded text-ifood-red focus:ring-ifood-red">
+                                <span>Queijo Extra</span>
+                            </div>
+                            <span class="font-semibold text-gray-600">+ R$ 8,00</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Observação -->
+                <div class="border-t pt-3">
+                    <label class="font-bold text-sm text-gray-800 block mb-1">Observações</label>
+                    <textarea id="modal-product-obs" placeholder="Ex: Tirar a cebola, maionese à parte..." class="w-full border rounded-lg p-2 text-sm focus:outline-none focus:border-ifood-red" rows="2"></textarea>
+                </div>
+            </div>
+
+            <!-- Rodapé Modal Produto -->
+            <div class="p-4 border-t flex items-center justify-between gap-4 bg-gray-50">
+                <div class="flex items-center border rounded-lg bg-white">
+                    <button onclick="app.updateModalQty(-1)" class="px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded-l-lg font-bold">-</button>
+                    <span id="modal-product-qty" class="px-3 py-1.5 font-bold text-sm">1</span>
+                    <button onclick="app.updateModalQty(1)" class="px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded-r-lg font-bold">+</button>
+                </div>
+                <button onclick="app.confirmAddToCart()" class="flex-1 bg-ifood-red text-white font-bold py-2.5 px-4 rounded-lg hover:bg-ifood-darkRed transition flex items-center justify-between">
+                    <span>Adicionar</span>
+                    <span id="modal-product-total-price">R$ 0,00</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CHECKOUT / FINALIZAÇÃO -->
+    <div id="checkout-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+            <div class="p-4 border-b flex items-center justify-between bg-gray-50">
+                <h3 class="font-bold text-lg text-gray-800">Finalizar Pedido</h3>
+                <button onclick="app.closeCheckoutModal()" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+            </div>
+
+            <div class="p-6 flex-1 overflow-y-auto space-y-6">
+                <!-- Endereço de Entrega -->
+                <div>
+                    <h4 class="font-bold text-sm text-gray-800 mb-2"><i class="fa-solid fa-location-dot text-ifood-red"></i> Endereço de Entrega</h4>
+                    <div class="bg-gray-50 p-3 rounded-lg border text-sm">
+                        <p id="checkout-address-display" class="font-semibold text-gray-800">Rua das Flores, 123 - Centro</p>
+                        <p class="text-xs text-gray-500">São Paulo - SP</p>
+                    </div>
+                </div>
+
+                <!-- Método de Pagamento -->
+                <div>
+                    <h4 class="font-bold text-sm text-gray-800 mb-3"><i class="fa-solid fa-credit-card text-ifood-red"></i> Forma de Pagamento</h4>
+                    <div class="grid grid-cols-2 gap-3" id="payment-methods">
+                        <label class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer hover:border-ifood-red transition">
+                            <input type="radio" name="payment" value="PIX" checked class="text-ifood-red focus:ring-ifood-red">
+                            <div>
+                                <p class="text-xs font-bold text-gray-800">PIX</p>
+                                <p class="text-[10px] text-gray-400">Aprovação imediata</p>
+                            </div>
+                        </label>
+
+                        <label class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer hover:border-ifood-red transition">
+                            <input type="radio" name="payment" value="Cartão de Crédito" class="text-ifood-red focus:ring-ifood-red">
+                            <div>
+                                <p class="text-xs font-bold text-gray-800">Crédito</p>
+                                <p class="text-[10px] text-gray-400">Pague no app</p>
+                            </div>
+                        </label>
+
+                        <label class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer hover:border-ifood-red transition">
+                            <input type="radio" name="payment" value="VR / VA" class="text-ifood-red focus:ring-ifood-red">
+                            <div>
+                                <p class="text-xs font-bold text-gray-800">VR / VA</p>
+                                <p class="text-[10px] text-gray-400">Sodexo, Alelo, VR</p>
+                            </div>
+                        </label>
+
+                        <label class="flex items-center gap-3 p-3 border rounded-xl cursor-pointer hover:border-ifood-red transition">
+                            <input type="radio" name="payment" value="Dinheiro" class="text-ifood-red focus:ring-ifood-red">
+                            <div>
+                                <p class="text-xs font-bold text-gray-800">Dinheiro</p>
+                                <p class="text-[10px] text-gray-400">Pague na entrega</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Resumo Valores -->
+                <div class="bg-gray-50 p-4 rounded-xl border space-y-2 text-sm">
+                    <div class="flex justify-between text-gray-600">
+                        <span>Total dos produtos:</span>
+                        <span id="checkout-subtotal">R$ 0,00</span>
+                    </div>
+                    <div class="flex justify-between text-gray-600">
+                        <span>Taxa de entrega:</span>
+                        <span id="checkout-delivery">R$ 0,00</span>
+                    </div>
+                    <div id="checkout-discount-row" class="flex justify-between text-green-600 font-semibold hidden">
+                        <span>Desconto:</span>
+                        <span id="checkout-discount">- R$ 0,00</span>
+                    </div>
+                    <div class="flex justify-between font-extrabold text-base text-gray-800 border-t pt-2">
+                        <span>Valor Final:</span>
+                        <span id="checkout-total" class="text-ifood-red">R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botão Confirmar Pedido -->
+            <div class="p-4 border-t bg-gray-50">
+                <button onclick="app.placeOrder()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition shadow-md flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>Confirmar e Fazer Pedido</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL SELEÇÃO DE ENDEREÇO -->
+    <div id="address-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-lg text-gray-800">Onde você quer receber seu pedido?</h3>
+                <button onclick="app.toggleAddressModal()" class="text-gray-400 text-xl">&times;</button>
+            </div>
+            <div class="space-y-3">
+                <input type="text" id="new-address-input" placeholder="Digite seu endereço e número" class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-ifood-red">
+                <button onclick="app.updateAddress()" class="w-full bg-ifood-red text-white font-bold py-2 rounded-lg hover:bg-ifood-darkRed transition">Salvar Endereço</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICAÇÃO TOAST DE SUCESSO -->
+    <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-sm font-semibold px-5 py-3 rounded-full shadow-xl z-50 transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-3">
+        <i class="fa-solid fa-circle-check text-green-400 text-lg"></i>
+        <span id="toast-message">Item adicionado com sucesso!</span>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // MOCK DATA (Dados do Aplicativo)
+        const categoriesData = [
+            { id: 'all', name: 'Tudo', icon: 'fa-utensils' },
+            { id: 'burger', name: 'Lanches', icon: 'fa-burger' },
+            { id: 'pizza', name: 'Pizza', icon: 'fa-pizza-slice' },
+            { id: 'japanese', name: 'Japonês', icon: 'fa-fish' },
+            { id: 'dessert', name: 'Doces', icon: 'fa-ice-cream' },
+            { id: 'healthy', name: 'Saudável', icon: 'fa-leaf' },
+            { id: 'drinks', name: 'Bebidas', icon: 'fa-wine-glass' }
+        ];
+
+        const restaurantsData = [
+            {
+                id: 1,
+                name: 'Outback Steakhouse',
+                category: 'burger',
+                rating: 4.8,
+                time: '30-40 min',
+                deliveryFee: 7.90,
+                isFamous: true,
+                image: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=500&auto=format&fit=crop&q=80',
+                banner: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=1200&auto=format&fit=crop&q=80',
+                menu: [
+                    { id: 101, name: 'The Outbacker Burger', desc: 'Hambúrguer de 200g, queijo, alface, tomate, picles e maionese especial no pão brioche.', price: 44.90, category: 'Mais Pedidos', image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&auto=format&fit=crop&q=80' },
+                    { id: 102, name: 'Ribs On The Barbie', desc: 'Costela suína grelhada na leña com molho barbecue e batatas fritas.', price: 89.90, category: 'Mais Pedidos', image: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=500&auto=format&fit=crop&q=80' },
+                    { id: 103, name: 'Aussie Cheese Fries', desc: 'Batatas fritas cobertas com mix de queijos e bacon crocante.', price: 59.90, category: 'Acompanhamentos', image: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?w=500&auto=format&fit=crop&q=80' },
+                    { id: 104, name: 'Refrigerante Lata 350ml', desc: 'Coca-Cola, Guaraná Antarctica ou Fanta.', price: 7.90, category: 'Bebidas', image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=500&auto=format&fit=crop&q=80' }
+                ]
+            },
+            {
+                id: 2,
+                name: 'Dominos Pizza',
+                category: 'pizza',
+                rating: 4.7,
+                time: '20-30 min',
+                deliveryFee: 0.00,
+                isFamous: true,
+                image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500&auto=format&fit=crop&q=80',
+                banner: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=1200&auto=format&fit=crop&q=80',
+                menu: [
+                    { id: 201, name: 'Pizza Pepperoni Média', desc: 'Massa tradicional, molho de tomate, mussarela premium e pepperoni fatiado.', price: 49.90, category: 'Mais Pedidos', image: 'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=500&auto=format&fit=crop&q=80' },
+                    { id: 202, name: 'Pizza Quatro Queijos', desc: 'Mussarela, queijo prato, catupiry e gorgonzola.', price: 54.90, category: 'Pizzas Tradicionais', image: 'https://images.unsplash.com/photo-1573821663912-569905455b1c?w=500&auto=format&fit=crop&q=80' },
+                    { id: 203, name: 'Choco Bread', desc: 'Massa recheada com chocolate ao leite derretido e polvilhada com açúcar.', price: 24.90, category: 'Sobremesas', image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=500&auto=format&fit=crop&q=80' }
+                ]
+            },
+            {
+                id: 3,
+                name: 'Sushi Yuzu',
+                category: 'japanese',
+                rating: 4.9,
+                time: '40-55 min',
+                deliveryFee: 12.00,
+                isFamous: false,
+                image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=500&auto=format&fit=crop&q=80',
+                banner: 'https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=1200&auto=format&fit=crop&q=80',
+                menu: [
+                    { id: 301, name: 'Combo Hot Roll 16 Peças', desc: 'Empanado e crocante com salmão e cream cheese, finalizado com tarê.', price: 39.90, category: 'Mais Pedidos', image: 'https://images.unsplash.com/photo-1617196034796-73dfa7b1fd56?w=500&auto=format&fit=crop&q=80' },
+                    { id: 302, name: 'Sashimi Salmão (10 fatias)', desc: 'Fatias frescas e selecionadas de salmão.', price: 48.00, category: 'Sashimis', image: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=500&auto=format&fit=crop&q=80' }
+                ]
+            },
+            {
+                id: 4,
+                name: 'Bacio di Latte',
+                category: 'dessert',
+                rating: 4.9,
+                time: '15-25 min',
+                deliveryFee: 5.00,
+                isFamous: true,
+                image: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=500&auto=format&fit=crop&q=80',
+                banner: 'https://images.unsplash.com/photo-1570197788417-0e82375c9371?w=1200&auto=format&fit=crop&q=80',
+                menu: [
+                    { id: 401, name: 'Coppa Média (2 Sabores)', desc: 'Escolha até 2 sabores de gelato artesanal italiano fresquinho (490ml).', price: 36.00, category: 'Mais Pedidos', image: 'https://images.unsplash.com/photo-1580915411954-282cb1b0d780?w=500&auto=format&fit=crop&q=80' }
+                ]
+            }
+        ];
+
+        // CONTROLLER DA APLICAÇÃO (SPA STATE MANAGEMENT)
+        class IFoodApp {
+            constructor() {
+                this.restaurants = [...restaurantsData];
+                this.selectedCategory = 'all';
+                this.currentRestaurant = null;
+                this.selectedProduct = null;
+                this.modalProductQty = 1;
+                this.cart = [];
+                this.coupon = null;
+                this.currentAddress = "Rua das Flores, 123";
+                this.activeOrder = null;
+                this.trackingInterval = null;
+
+                this.init();
+            }
+
+            init() {
+                this.renderCategories();
+                this.renderRestaurants();
+                this.updateCartUI();
+            }
+
+            // --- NAVEGAÇÃO ENTRE VIEWS ---
+            showHome() {
+                document.getElementById('view-home').classList.remove('hidden');
+                document.getElementById('view-restaurant').classList.add('hidden');
+                document.getElementById('view-tracking').classList.add('hidden');
+                window.scrollTo(0, 0);
+            }
+
+            showRestaurant(restaurantId) {
+                this.currentRestaurant = this.restaurants.find(r => r.id === restaurantId);
+                if (!this.currentRestaurant) return;
+
+                this.renderRestaurantHeader();
+                this.renderRestaurantMenu();
+
+                document.getElementById('view-home').classList.add('hidden');
+                document.getElementById('view-restaurant').classList.remove('hidden');
+                document.getElementById('view-tracking').classList.add('hidden');
+                window.scrollTo(0, 0);
+            }
+
+            showTracking() {
+                if (!this.activeOrder) return;
+                document.getElementById('view-home').classList.add('hidden');
+                document.getElementById('view-restaurant').classList.add('hidden');
+                document.getElementById('view-tracking').classList.remove('hidden');
+                window.scrollTo(0, 0);
+            }
+
+            // --- RENDERIZADORES ---
+            renderCategories() {
+                const container = document.getElementById('categories-container');
+                container.innerHTML = categoriesData.map(cat => `
+                    <button onclick="app.filterByCategory('${cat.id}')" class="flex flex-col items-center justify-center min-w-[80px] p-3 rounded-2xl border transition-all ${this.selectedCategory === cat.id ? 'bg-ifood-red text-white border-ifood-red shadow-md scale-105' : 'bg-white border-gray-100 text-gray-600 hover:bg-gray-50'}">
+                        <i class="fa-solid ${cat.icon} text-xl mb-1.5"></i>
+                        <span class="text-xs font-semibold whitespace-nowrap">${cat.name}</span>
+                    </button>
+                `).join('');
+            }
+
+            renderRestaurants() {
+                const grid = document.getElementById('restaurants-grid');
+                let filtered = this.restaurants;
+
+                if (this.selectedCategory !== 'all') {
+                    filtered = filtered.filter(r => r.category === this.selectedCategory);
+                }
+
+                if (filtered.length === 0) {
+                    grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-400">Nenhum restaurante encontrado.</div>`;
+                    return;
+                }
+
+                grid.innerHTML = filtered.map(r => `
+                    <div onclick="app.showRestaurant(${r.id})" class="bg-white rounded-2xl border border-gray-100 p-4 hover:shadow-lg transition-all cursor-pointer flex gap-4 group">
+                        <div class="relative w-24 h-24 rounded-xl overflow-hidden flex-shrink-0">
+                            <img src="${r.image}" class="w-full h-full object-cover group-hover:scale-110 transition duration-300" alt="${r.name}">
+                            ${r.isFamous ? `<span class="absolute top-1 left-1 bg-ifood-red text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">Famoso</span>` : ''}
+                        </div>
+                        <div class="flex-1 flex flex-col justify-center">
+                            <h4 class="font-bold text-gray-800 group-hover:text-ifood-red transition">${r.name}</h4>
+                            <div class="flex items-center gap-1.5 text-xs text-yellow-500 font-bold mt-1">
+                                <i class="fa-solid fa-star"></i>
+                                <span>${r.rating.toFixed(1)}</span>
+                                <span class="text-gray-300">•</span>
+                                <span class="text-gray-500 font-normal">${r.time}</span>
+                            </div>
+                            <div class="text-xs text-gray-400 mt-1">
+                                ${r.deliveryFee === 0 ? '<span class="text-green-600 font-semibold">Entrega Grátis</span>' : `Taxa: R$ ${r.deliveryFee.toFixed(2).replace('.', ',')}`}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            renderRestaurantHeader() {
+                const r = this.currentRestaurant;
+                const container = document.getElementById('restaurant-header-info');
+                container.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <img src="${r.image}" class="w-20 h-20 rounded-2xl object-cover shadow-sm border" alt="${r.name}">
+                        <div>
+                            <h2 class="text-2xl font-extrabold text-gray-800">${r.name}</h2>
+                            <div class="flex items-center gap-3 text-sm mt-1 text-gray-500">
+                                <span class="text-yellow-500 font-bold"><i class="fa-solid fa-star"></i> ${r.rating.toFixed(1)}</span>
+                                <span>•</span>
+                                <span>${r.time}</span>
+                                <span>•</span>
+                                <span>${r.deliveryFee === 0 ? 'Grátis' : 'R$ ' + r.deliveryFee.toFixed(2)}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderRestaurantMenu() {
+                const r = this.currentRestaurant;
+                
+                // Agrupar pratos por categoria
+                const categories = [...new Set(r.menu.map(item => item.category))];
+                
+                // Render Abas de Navegação
+                const nav = document.getElementById('menu-categories-nav');
+                nav.innerHTML = categories.map((cat, idx) => `
+                    <a href="#cat-${idx}" class="py-3 text-sm font-bold text-gray-600 hover:text-ifood-red whitespace-nowrap border-b-2 border-transparent hover:border-ifood-red transition">${cat}</a>
+                `).join('');
+
+                // Render Lista de Produtos
+                const itemsContainer = document.getElementById('restaurant-menu-items');
+                itemsContainer.innerHTML = categories.map((cat, idx) => {
+                    const catItems = r.menu.filter(i => i.category === cat);
+                    return `
+                        <div id="cat-${idx}">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">${cat}</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                ${catItems.map(item => `
+                                    <div onclick="app.openProductModal(${item.id})" class="bg-white rounded-xl border border-gray-100 p-4 hover:border-red-200 transition flex justify-between gap-4 cursor-pointer group">
+                                        <div class="flex-1 flex flex-col justify-between">
+                                            <div>
+                                                <h4 class="font-bold text-gray-800 group-hover:text-ifood-red transition">${item.name}</h4>
+                                                <p class="text-xs text-gray-400 line-clamp-2 mt-1">${item.desc}</p>
+                                            </div>
+                                            <span class="font-bold text-sm text-gray-900 mt-2">R$ ${item.price.toFixed(2).replace('.', ',')}</span>
+                                        </div>
+                                        <img src="${item.image}" class="w-24 h-24 rounded-lg object-cover flex-shrink-0" alt="${item.name}">
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // --- FILTROS E PESQUISA ---
+            filterByCategory(catId) {
+                this.selectedCategory = catId;
+                this.renderCategories();
+                this.renderRestaurants();
+            }
+
+            handleSearch(query) {
+                const q = query.toLowerCase().trim();
+                if (!q) {
+                    this.restaurants = [...restaurantsData];
+                } else {
+                    this.restaurants = restaurantsData.filter(r => 
+                        r.name.toLowerCase().includes(q) || 
+                        r.menu.some(m => m.name.toLowerCase().includes(q))
+                    );
+                }
+                this.renderRestaurants();
+            }
+
+            sortRestaurants(criteria) {
+                if (criteria === 'rating') {
+                    this.restaurants.sort((a, b) => b.rating - a.rating);
+                } else if (criteria === 'time') {
+                    this.restaurants.sort((a, b) => parseInt(a.time) - parseInt(b.time));
+                } else if (criteria === 'fee') {
+                    this.restaurants.sort((a, b) => a.deliveryFee - b.deliveryFee);
+                }
+                this.renderRestaurants();
+            }
+
+            // --- MODAL DE PRODUTO & ADIÇÃO AO CARRINHO ---
+            openProductModal(productId) {
+                this.selectedProduct = this.currentRestaurant.menu.find(p => p.id === productId);
+                if (!this.selectedProduct) return;
+
+                this.modalProductQty = 1;
+                document.getElementById('modal-product-img').src = this.selectedProduct.image;
+                document.getElementById('modal-product-title').innerText = this.selectedProduct.name;
+                document.getElementById('modal-product-desc').innerText = this.selectedProduct.desc;
+                document.getElementById('modal-product-price').innerText = `R$ ${this.selectedProduct.price.toFixed(2).replace('.', ',')}`;
+                document.getElementById('modal-product-qty').innerText = '1';
+                document.getElementById('modal-product-obs').value = '';
+
+                // Desmarcar adicionais
+                document.querySelectorAll('.extra-option').forEach(cb => cb.checked = false);
+
+                this.updateModalTotalPrice();
+                document.getElementById('product-modal').classList.remove('hidden');
+            }
+
+            closeProductModal() {
+                document.getElementById('product-modal').classList.add('hidden');
+            }
+
+            updateModalQty(change) {
+                this.modalProductQty = Math.max(1, this.modalProductQty + change);
+                document.getElementById('modal-product-qty').innerText = this.modalProductQty;
+                this.updateModalTotalPrice();
+            }
+
+            updateModalTotalPrice() {
+                let extrasTotal = 0;
+                document.querySelectorAll('.extra-option:checked').forEach(cb => {
+                    extrasTotal += parseFloat(cb.value);
+                });
+
+                const total = (this.selectedProduct.price + extrasTotal) * this.modalProductQty;
+                document.getElementById('modal-product-total-price').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+            }
+
+            confirmAddToCart() {
+                let extras = [];
+                let extrasCost = 0;
+                document.querySelectorAll('.extra-option:checked').forEach(cb => {
+                    extrasCost += parseFloat(cb.value);
+                    extras.push(cb.parentElement.innerText.trim());
+                });
+
+                const obs = document.getElementById('modal-product-obs').value.trim();
+
+                const cartItem = {
+                    cartItemId: Date.now(),
+                    restaurantId: this.currentRestaurant.id,
+                    restaurantName: this.currentRestaurant.name,
+                    product: this.selectedProduct,
+                    qty: this.modalProductQty,
+                    extras: extras,
+                    unitPrice: this.selectedProduct.price + extrasCost,
+                    totalPrice: (this.selectedProduct.price + extrasCost) * this.modalProductQty,
+                    obs: obs
+                };
+
+                // Verificar se é de outro restaurante
+                if (this.cart.length > 0 && this.cart[0].restaurantId !== this.currentRestaurant.id) {
+                    if (confirm("Seu carrinho contém itens de outro restaurante. Deseja limpar o carrinho atual e adicionar este item?")) {
+                        this.cart = [];
+                    } else {
+                        return;
+                    }
+                }
+
+                this.cart.push(cartItem);
+                this.closeProductModal();
+                this.updateCartUI();
+                this.showToast("Item adicionado ao carrinho!");
+            }
+
+            // --- STREAMING_CHUNK:Cart Management Logic ---
+            // --- GERENCIAMENTO DO CARRINHO ---
+            toggleCartDrawer() {
+                const overlay = document.getElementById('cart-drawer-overlay');
+                const drawer = document.getElementById('cart-drawer');
+
+                if (drawer.classList.contains('translate-x-full')) {
+                    overlay.classList.remove('hidden');
+                    setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+                    drawer.classList.remove('translate-x-full');
+                } else {
+                    overlay.classList.add('opacity-0');
+                    drawer.classList.add('translate-x-full');
+                    setTimeout(() => overlay.classList.add('hidden'), 300);
+                }
+            }
+
+            updateCartQty(cartItemId, change) {
+                const item = this.cart.find(i => i.cartItemId === cartItemId);
+                if (!item) return;
+
+                item.qty += change;
+                if (item.qty <= 0) {
+                    this.cart = this.cart.filter(i => i.cartItemId !== cartItemId);
+                } else {
+                    item.totalPrice = item.unitPrice * item.qty;
+                }
+                this.updateCartUI();
+            }
+
+            updateCartUI() {
+                const container = document.getElementById('cart-items-container');
+                const badge = document.getElementById('cart-badge');
+                
+                // Atualiza Badge
+                const totalItems = this.cart.reduce((acc, i) => acc + i.qty, 0);
+                badge.innerText = totalItems;
+
+                if (this.cart.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-16 text-gray-400 space-y-3">
+                            <i class="fa-solid fa-bag-shopping text-5xl text-gray-200"></i>
+                            <p class="font-medium">Sua sacola está vazia</p>
+                            <p class="text-xs">Adicione itens dos seus restaurantes favoritos.</p>
+                        </div>
+                    `;
+                    document.getElementById('cart-footer').classList.add('hidden');
+                    return;
+                }
+
+                document.getElementById('cart-footer').classList.remove('hidden');
+
+                // Renderiza Lista
+                container.innerHTML = this.cart.map(item => `
+                    <div class="flex justify-between items-start border-b pb-3 text-sm">
+                        <div class="flex-1">
+                            <h4 class="font-bold text-gray-800">${item.product.name}</h4>
+                            <p class="text-xs text-gray-500">R$ ${item.unitPrice.toFixed(2).replace('.', ',')}</p>
+                            ${item.extras.length ? `<p class="text-[11px] text-gray-400 mt-0.5">+ ${item.extras.join(', ')}</p>` : ''}
+                            ${item.obs ? `<p class="text-[11px] text-italic text-gray-400">Obs: "${item.obs}"</p>` : ''}
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="flex items-center border rounded-lg">
+                                <button onclick="app.updateCartQty(${item.cartItemId}, -1)" class="px-2 py-1 text-gray-500 hover:bg-gray-100 font-bold text-xs">-</button>
+                                <span class="px-2 font-bold text-xs">${item.qty}</span>
+                                <button onclick="app.updateCartQty(${item.cartItemId}, 1)" class="px-2 py-1 text-gray-500 hover:bg-gray-100 font-bold text-xs">+</button>
+                            </div>
+                            <span class="font-bold text-gray-800 text-xs w-16 text-right">R$ ${item.totalPrice.toFixed(2).replace('.', ',')}</span>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Cálculos de Totais
+                const subtotal = this.cart.reduce((acc, i) => acc + i.totalPrice, 0);
+                const restaurant = restaurantsData.find(r => r.id === this.cart[0].restaurantId);
+                const deliveryFee = restaurant ? restaurant.deliveryFee : 0;
+
+                let discount = 0;
+                if (this.coupon === 'IFOOD10') discount = 10.00;
+                if (this.coupon === 'PRIMEIRACOMPRA') discount = subtotal * 0.15; // 15% OFF
+
+                const total = Math.max(0, subtotal + deliveryFee - discount);
+
+                document.getElementById('cart-subtotal').innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
+                document.getElementById('cart-delivery-fee').innerText = deliveryFee === 0 ? 'GRÁTIS' : `R$ ${deliveryFee.toFixed(2).replace('.', ',')}`;
+                
+                if (discount > 0) {
+                    document.getElementById('discount-row').classList.remove('hidden');
+                    document.getElementById('cart-discount').innerText = `- R$ ${discount.toFixed(2).replace('.', ',')}`;
+                } else {
+                    document.getElementById('discount-row').classList.add('hidden');
+                }
+
+                document.getElementById('cart-total').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+            }
+
+            applyCoupon() {
+                const input = document.getElementById('coupon-input');
+                const code = input.value.trim().toUpperCase();
+                const msg = document.getElementById('coupon-message');
+
+                if (code === 'IFOOD10' || code === 'PRIMEIRACOMPRA') {
+                    this.coupon = code;
+                    msg.innerText = "Cupom aplicado com sucesso!";
+                    msg.className = "text-xs font-semibold text-green-600";
+                    msg.classList.remove('hidden');
+                    this.updateCartUI();
+                } else {
+                    msg.innerText = "Cupom inválido ou expirado.";
+                    msg.className = "text-xs font-semibold text-red-500";
+                    msg.classList.remove('hidden');
+                }
+            }
+
+            // --- STREAMING_CHUNK:Checkout & Order Tracking Logic ---
+            // --- CHECKOUT & FINALIZAÇÃO ---
+            openCheckoutModal() {
+                if (this.cart.length === 0) return;
+                this.toggleCartDrawer();
+
+                const subtotal = this.cart.reduce((acc, i) => acc + i.totalPrice, 0);
+                const restaurant = restaurantsData.find(r => r.id === this.cart[0].restaurantId);
+                const deliveryFee = restaurant ? restaurant.deliveryFee : 0;
+                
+                let discount = 0;
+                if (this.coupon === 'IFOOD10') discount = 10.00;
+                if (this.coupon === 'PRIMEIRACOMPRA') discount = subtotal * 0.15;
+
+                const total = Math.max(0, subtotal + deliveryFee - discount);
+
+                document.getElementById('checkout-address-display').innerText = this.currentAddress;
+                document.getElementById('checkout-subtotal').innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
+                document.getElementById('checkout-delivery').innerText = deliveryFee === 0 ? 'GRÁTIS' : `R$ ${deliveryFee.toFixed(2).replace('.', ',')}`;
+                
+                if (discount > 0) {
+                    document.getElementById('checkout-discount-row').classList.remove('hidden');
+                    document.getElementById('checkout-discount').innerText = `- R$ ${discount.toFixed(2).replace('.', ',')}`;
+                } else {
+                    document.getElementById('checkout-discount-row').classList.add('hidden');
+                }
+
+                document.getElementById('checkout-total').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+
+                document.getElementById('checkout-modal').classList.remove('hidden');
+            }
+
+            closeCheckoutModal() {
+                document.getElementById('checkout-modal').classList.add('hidden');
+            }
+
+            placeOrder() {
+                this.closeCheckoutModal();
+
+                // Criar Pedido Ativo
+                this.activeOrder = {
+                    id: '#' + Math.floor(1000 + Math.random() * 9000),
+                    items: [...this.cart],
+                    status: 'preparing', // confirmed -> preparing -> delivering -> delivered
+                    restaurant: restaurantsData.find(r => r.id === this.cart[0].restaurantId)
+                };
+
+                // Limpar Carrinho
+                this.cart = [];
+                this.coupon = null;
+                this.updateCartUI();
+
+                // Exibir Botão Rastreio na Navbar
+                document.getElementById('active-order-btn').classList.remove('hidden');
+                document.getElementById('active-order-btn').classList.add('flex');
+
+                // Iniciar Rastreamento
+                this.startOrderTracking();
+                this.showTracking();
+                this.showToast("Pedido realizado com sucesso!");
+            }
+
+            // --- SIMULAÇÃO DE RASTREAMENTO EM TEMPO REAL ---
+            startOrderTracking() {
+                const order = this.activeOrder;
+                document.getElementById('track-order-id').innerText = order.id;
+
+                // Render Itens
+                document.getElementById('track-items-list').innerHTML = order.items.map(i => `
+                    <li class="py-2 flex justify-between">
+                        <span>${i.qty}x ${i.product.name}</span>
+                        <span class="font-bold">R$ ${i.totalPrice.toFixed(2).replace('.', ',')}</span>
+                    </li>
+                `).join('');
+
+                // Simular Etapas de Progresso em Intervalo
+                let step = 2; // Começa em Preparação
+                this.updateTrackingUI(step);
+
+                if (this.trackingInterval) clearInterval(this.trackingInterval);
+
+                this.trackingInterval = setInterval(() => {
+                    step++;
+                    if (step > 4) {
+                        clearInterval(this.trackingInterval);
+                    } else {
+                        this.updateTrackingUI(step);
+                    }
+                }, 8000); // Avança etapa a cada 8 segundos para simulação
+            }
+
+            updateTrackingUI(step) {
+                const fill = document.getElementById('tracking-progress-fill');
+                const statusBadge = document.getElementById('track-status-badge');
+
+                const s1 = document.getElementById('step-1-icon');
+                const s2 = document.getElementById('step-2-icon');
+                const s3 = document.getElementById('step-3-icon');
+                const s4 = document.getElementById('step-4-icon');
+
+                if (step === 2) { // Preparação
+                    fill.style.width = '33%';
+                    statusBadge.innerText = 'Em Preparação';
+                    statusBadge.className = 'bg-yellow-100 text-yellow-800 text-xs font-bold px-3 py-1.5 rounded-full';
+                    s2.className = 'w-10 h-10 rounded-full bg-ifood-red text-white flex items-center justify-center font-bold text-sm border-4 border-white shadow';
+                    s2.innerHTML = '<i class="fa-solid fa-utensils animate-spin"></i>';
+                } else if (step === 3) { // Saiu pra entrega
+                    fill.style.width = '66%';
+                    statusBadge.innerText = 'Saiu para Entrega';
+                    statusBadge.className = 'bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1.5 rounded-full';
+                    s3.className = 'w-10 h-10 rounded-full bg-ifood-red text-white flex items-center justify-center font-bold text-sm border-4 border-white shadow';
+                    s3.innerHTML = '<i class="fa-solid fa-motorcycle animate-bounce"></i>';
+                    document.getElementById('track-eta').innerText = '10 - 15 min';
+                } else if (step === 4) { // Entregue
+                    fill.style.width = '100%';
+                    statusBadge.innerText = 'Entregue';
+                    statusBadge.className = 'bg-green-100 text-green-800 text-xs font-bold px-3 py-1.5 rounded-full';
+                    s4.className = 'w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center font-bold text-sm border-4 border-white shadow';
+                    s4.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+                    document.getElementById('track-eta').innerText = 'Pedido Chegou!';
+                }
+            }
+
+            // --- ENDEREÇO & TOAST ---
+            toggleAddressModal() {
+                const modal = document.getElementById('address-modal');
+                modal.classList.toggle('hidden');
+            }
+
+            updateAddress() {
+                const val = document.getElementById('new-address-input').value.trim();
+                if (val) {
+                    this.currentAddress = val;
+                    document.getElementById('current-address').innerText = val;
+                    this.toggleAddressModal();
+                    this.showToast("Endereço atualizado!");
+                }
+            }
+
+            showToast(msg) {
+                const toast = document.getElementById('toast');
+                document.getElementById('toast-message').innerText = msg;
+                toast.classList.remove('translate-y-20', 'opacity-0');
+                setTimeout(() => {
+                    toast.classList.add('translate-y-20', 'opacity-0');
+                }, 3000);
+            }
+        }
+
+        // INICIALIZAÇÃO DO APP NO WINDOW LOAD
+        let app;
+        window.onload = function () {
+            app = new IFoodApp();
+        };
+    </script>
+</body>
+</html>
