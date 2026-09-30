@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RP-FOOD | Delivery em São José do Rio Preto</title>
+    <title>RP-FOOD | Plataforma Multi-Tenant de Delivery</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome Icons -->
@@ -19,7 +19,7 @@
                         rpfood: {
                             red: '#EA1D2C',
                             darkRed: '#C21321',
-                            lightBg: '#F7F7F7',
+                            lightBg: '#F8F9FA',
                             grayText: '#717171',
                             darkText: '#1A1A1A'
                         }
@@ -38,19 +38,40 @@
         ::-webkit-scrollbar-thumb:hover { background: #ea1d2c; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        @keyframes pulse-light { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .animate-pulse-light { animation: pulse-light 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse-slow { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .animate-pulse-slow { animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
     </style>
 </head>
 <body class="h-full flex flex-col font-sans text-rpfood-darkText antialiased bg-gray-50 selection:bg-red-100 selection:text-rpfood-red">
 
-    <!-- HEADER NAVIGATION -->
-    <header class="sticky top-0 z-30 bg-white border-b border-gray-100 shadow-sm">
+    <!-- ROLE SWITCHER TOOLBAR (CLIENT / RESTAURANT / ADMIN) -->
+    <nav id="role-bar" class="bg-gray-900 text-white text-xs py-2 px-4 sticky top-0 z-50 border-b border-gray-800 shadow-lg">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+                <span class="bg-rpfood-red text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider">Modo Demo</span>
+                <span class="font-semibold text-gray-300">Selecione o perfil de uso da plataforma:</span>
+            </div>
+            <div class="flex items-center gap-1.5 bg-gray-800 p-1 rounded-xl">
+                <button onclick="app.switchRole('client')" id="btn-role-client" class="role-btn px-3 py-1 rounded-lg font-bold transition text-gray-300 hover:text-white">
+                    <i class="fa-solid fa-user-gear mr-1"></i> Cliente (Marketplace)
+                </button>
+                <button onclick="app.switchRole('restaurant')" id="btn-role-restaurant" class="role-btn px-3 py-1 rounded-lg font-bold transition text-gray-300 hover:text-white">
+                    <i class="fa-solid fa-store mr-1"></i> Gestor do Restaurante
+                </button>
+                <button onclick="app.switchRole('admin')" id="btn-role-admin" class="role-btn px-3 py-1 rounded-lg font-bold transition text-gray-300 hover:text-white">
+                    <i class="fa-solid fa-shield-halved mr-1"></i> Admin Master (RP-FOOD)
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- CLIENT HEADER NAVIGATION -->
+    <header id="client-header" class="bg-white border-b border-gray-100 shadow-sm sticky top-10 z-30">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16 gap-3 sm:gap-6">
                 
                 <!-- BRAND LOGO -->
-                <div class="flex items-center gap-3 cursor-pointer select-none" onclick="app.showView('home')">
+                <div class="flex items-center gap-3 cursor-pointer select-none" onclick="app.showClientView('home')">
                     <div class="bg-rpfood-red text-white p-2 rounded-xl flex items-center justify-center font-black text-xl shadow-md">
                         RP
                     </div>
@@ -58,7 +79,7 @@
                         <span class="text-xl sm:text-2xl font-black tracking-tight text-rpfood-red leading-none">
                             RP-FOOD
                         </span>
-                        <span class="text-[10px] font-bold text-gray-400 tracking-widest uppercase">Rio Preto</span>
+                        <span class="text-[10px] font-bold text-gray-400 tracking-widest uppercase">São José do Rio Preto</span>
                     </div>
                 </div>
 
@@ -82,14 +103,14 @@
                     </div>
                 </div>
 
-                <!-- ACTIONS (HISTORY, ORDER TRACKING & CART) -->
+                <!-- ACTIONS -->
                 <div class="flex items-center gap-2 sm:gap-3">
                     <button onclick="app.openOrdersModal()" class="hidden md:flex items-center gap-2 text-gray-600 hover:text-rpfood-red px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition hover:bg-gray-100">
                         <i class="fa-solid fa-receipt text-base"></i>
                         <span>Meus Pedidos</span>
                     </button>
 
-                    <button id="active-order-btn" onclick="app.showView('tracking')" class="hidden items-center gap-2 bg-red-50 text-rpfood-red px-3 py-2 rounded-xl font-bold text-xs sm:text-sm hover:bg-red-100 transition animate-pulse-light border border-red-200">
+                    <button id="active-order-btn" onclick="app.showClientView('tracking')" class="hidden items-center gap-2 bg-red-50 text-rpfood-red px-3 py-2 rounded-xl font-bold text-xs sm:text-sm hover:bg-red-100 transition animate-pulse-slow border border-red-200">
                         <i class="fa-solid fa-motorcycle"></i>
                         <span class="hidden sm:inline">Acompanhar</span>
                     </button>
@@ -112,218 +133,357 @@
         </div>
     </header>
 
-    <!-- MAIN APP CONTAINER -->
+    <!-- MAIN APPLICATION CONTAINER -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-        <!-- ================= VIEW 1: HOME ================= -->
-        <section id="view-home" class="space-y-8">
-            
-            <!-- HERO PROMO BANNER -->
-            <div class="relative rounded-3xl overflow-hidden bg-gradient-to-r from-red-600 via-red-500 to-rose-600 text-white p-6 sm:p-8 shadow-xl shadow-red-100">
-                <div class="max-w-lg space-y-3 z-10 relative">
-                    <span class="bg-white/20 backdrop-blur-md text-white text-[11px] font-black px-3 py-1 rounded-full uppercase tracking-wider inline-block">Bairro Redentora & Região</span>
-                    <h1 class="text-2xl sm:text-4xl font-black leading-tight tracking-tight">Os melhores restaurantes de Rio Preto entregues na sua porta.</h1>
-                    <p class="text-red-100 text-xs sm:text-sm font-medium">Use o cupom <span class="font-extrabold bg-white text-rpfood-red px-2 py-0.5 rounded-md shadow-sm">RPFOOD10</span> e ganhe R$ 10 OFF!</p>
-                </div>
-                <i class="fa-solid fa-burger absolute -right-8 -bottom-10 text-[180px] text-white/10 rotate-12 pointer-events-none"></i>
-            </div>
+        <!-- ================================================================= -->
+        <!-- VIEW 1: CLIENT MARKETPLACE -->
+        <!-- ================================================================= -->
+        <div id="wrapper-client" class="view-wrapper space-y-8">
 
-            <!-- CATEGORIES SCROLL -->
-            <div>
-                <div class="flex items-center justify-between mb-3">
-                    <h2 class="text-lg font-bold text-gray-900">Categorias</h2>
-                </div>
-                <div class="flex items-center gap-3 overflow-x-auto pb-2 hide-scrollbar" id="categories-container">
-                    <!-- Categories injected via JS -->
-                </div>
-            </div>
-
-            <!-- QUICK FILTERS -->
-            <div class="flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar" id="quick-filters-container">
-                <!-- Quick filter pills injected via JS -->
-            </div>
-
-            <!-- RESTAURANTS SECTION -->
-            <div>
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-                    <div>
-                        <h2 class="text-xl font-extrabold text-gray-900" id="restaurants-section-title">Restaurantes em Destaque</h2>
-                        <p class="text-xs text-gray-500 font-medium">Lojas abertas com entrega para seu endereço</p>
+            <!-- HOME MARKETPLACE VIEW -->
+            <section id="client-home" class="space-y-8">
+                <!-- HERO PROMO BANNER -->
+                <div class="relative rounded-3xl overflow-hidden bg-gradient-to-r from-red-600 via-red-500 to-rose-600 text-white p-6 sm:p-8 shadow-xl shadow-red-100">
+                    <div class="max-w-lg space-y-3 z-10 relative">
+                        <span class="bg-white/20 backdrop-blur-md text-white text-[11px] font-black px-3 py-1 rounded-full uppercase tracking-wider inline-block">Bairro Redentora & Região</span>
+                        <h1 class="text-2xl sm:text-4xl font-black leading-tight tracking-tight">Os melhores restaurantes de Rio Preto entregues na sua porta.</h1>
+                        <p class="text-red-100 text-xs sm:text-sm font-medium">Use o cupom <span class="font-extrabold bg-white text-rpfood-red px-2 py-0.5 rounded-md shadow-sm">RPFOOD10</span> e ganhe R$ 10 OFF!</p>
                     </div>
-                    <div class="flex items-center gap-2 self-end sm:self-auto">
-                        <span class="text-xs text-gray-500 font-medium">Ordenar:</span>
-                        <select id="filter-sort" onchange="app.sortRestaurants(this.value)" class="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-rpfood-red">
-                            <option value="rating">Melhores Avaliados</option>
-                            <option value="time">Menor Tempo</option>
-                            <option value="fee">Menor Frete</option>
-                        </select>
-                    </div>
+                    <i class="fa-solid fa-burger absolute -right-8 -bottom-10 text-[180px] text-white/10 rotate-12 pointer-events-none"></i>
                 </div>
 
-                <!-- RESTAURANTS GRID -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="restaurants-grid">
-                    <!-- Restaurant Cards Injected via JS -->
-                </div>
-            </div>
-
-        </section>
-
-        <!-- ================= VIEW 2: RESTAURANT DETAIL ================= -->
-        <section id="view-restaurant" class="hidden space-y-6">
-            <button onclick="app.showView('home')" class="inline-flex items-center gap-2 text-xs font-bold text-gray-600 hover:text-rpfood-red transition bg-white px-3 py-2 rounded-xl border border-gray-200 shadow-sm">
-                <i class="fa-solid fa-arrow-left"></i> Voltar para Restaurantes
-            </button>
-
-            <!-- RESTAURANT HEADER CARD -->
-            <div id="restaurant-header-info" class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
-                <!-- Injected via JS -->
-            </div>
-
-            <!-- MENU CATEGORIES TABS -->
-            <div class="border-b border-gray-200 sticky top-16 bg-white/95 backdrop-blur z-20 pt-2 shadow-sm rounded-b-xl">
-                <nav class="flex space-x-6 overflow-x-auto hide-scrollbar px-2" id="menu-categories-nav">
-                    <!-- Menu Tabs Injected via JS -->
-                </nav>
-            </div>
-
-            <!-- MENU ITEMS LIST -->
-            <div id="restaurant-menu-items" class="space-y-8">
-                <!-- Menu Groups Injected via JS -->
-            </div>
-        </section>
-
-        <!-- ================= VIEW 3: ORDER TRACKING ================= -->
-        <section id="view-tracking" class="hidden space-y-6 max-w-3xl mx-auto">
-            <div class="bg-white rounded-3xl border border-gray-100 shadow-xl p-6 sm:p-8 space-y-6">
-                
-                <div class="flex items-center justify-between border-b border-gray-100 pb-4">
-                    <div>
-                        <span class="text-xs text-gray-400 font-bold uppercase tracking-wider block">Acompanhar Pedido</span>
-                        <h2 class="text-2xl font-black text-gray-900">Pedido <span id="track-order-id">#0000</span></h2>
-                    </div>
-                    <span id="track-status-badge" class="bg-yellow-100 text-yellow-800 text-xs font-extrabold px-3.5 py-1.5 rounded-full border border-yellow-200">
-                        Confirmado
-                    </span>
+                <!-- CATEGORIES SCROLL -->
+                <div>
+                    <h2 class="text-lg font-bold text-gray-900 mb-3">Categorias</h2>
+                    <div class="flex items-center gap-3 overflow-x-auto pb-2 hide-scrollbar" id="categories-container"></div>
                 </div>
 
-                <!-- TIMELINE -->
-                <div class="py-4">
-                    <div class="grid grid-cols-4 relative text-center">
-                        <div class="absolute top-1/2 left-0 right-0 h-1 bg-gray-200 -translate-y-1/2 z-0"></div>
-                        <div id="tracking-progress-fill" class="absolute top-1/2 left-0 h-1 bg-rpfood-red -translate-y-1/2 z-0 transition-all duration-700" style="width: 25%;"></div>
+                <!-- QUICK FILTERS -->
+                <div class="flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar" id="quick-filters-container"></div>
 
-                        <div class="relative z-10 flex flex-col items-center gap-2">
-                            <div id="step-1-icon" class="w-10 h-10 rounded-full bg-rpfood-red text-white flex items-center justify-center font-bold text-sm border-4 border-white shadow-md">
-                                <i class="fa-solid fa-receipt"></i>
-                            </div>
-                            <span class="text-[11px] font-bold text-gray-800">Confirmado</span>
-                        </div>
-
-                        <div class="relative z-10 flex flex-col items-center gap-2">
-                            <div id="step-2-icon" class="w-10 h-10 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center font-bold text-sm border-4 border-white shadow-md">
-                                <i class="fa-solid fa-utensils"></i>
-                            </div>
-                            <span class="text-[11px] font-bold text-gray-400">Preparo</span>
-                        </div>
-
-                        <div class="relative z-10 flex flex-col items-center gap-2">
-                            <div id="step-3-icon" class="w-10 h-10 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center font-bold text-sm border-4 border-white shadow-md">
-                                <i class="fa-solid fa-motorcycle"></i>
-                            </div>
-                            <span class="text-[11px] font-bold text-gray-400">A Caminho</span>
-                        </div>
-
-                        <div class="relative z-10 flex flex-col items-center gap-2">
-                            <div id="step-4-icon" class="w-10 h-10 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center font-bold text-sm border-4 border-white shadow-md">
-                                <i class="fa-solid fa-house-chimney"></i>
-                            </div>
-                            <span class="text-[11px] font-bold text-gray-400">Entregue</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- TIMER & COURIER CARD -->
-                <div class="bg-red-50/60 rounded-2xl p-5 border border-red-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 bg-rpfood-red text-white rounded-2xl flex items-center justify-center text-xl shadow-md shadow-red-200">
-                            <i class="fa-regular fa-clock"></i>
-                        </div>
+                <!-- RESTAURANTS LIST -->
+                <div>
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                         <div>
-                            <span class="text-xs text-gray-500 font-semibold block">Previsão estimada</span>
-                            <h4 id="track-eta" class="text-xl font-black text-gray-900">25 - 35 min</h4>
+                            <h2 class="text-xl font-extrabold text-gray-900" id="restaurants-section-title">Restaurantes em Destaque</h2>
+                            <p class="text-xs text-gray-500 font-medium">Lojas abertas com entrega para seu endereço</p>
+                        </div>
+                        <div class="flex items-center gap-2 self-end sm:self-auto">
+                            <span class="text-xs text-gray-500 font-medium">Ordenar:</span>
+                            <select id="filter-sort" onchange="app.sortRestaurants(this.value)" class="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-rpfood-red">
+                                <option value="rating">Melhores Avaliados</option>
+                                <option value="time">Menor Tempo</option>
+                                <option value="fee">Menor Frete</option>
+                            </select>
                         </div>
                     </div>
 
-                    <!-- CONFIRMATION CODE -->
-                    <div class="bg-white px-4 py-2.5 rounded-xl border border-red-200 text-center shadow-sm">
-                        <span class="text-[10px] text-gray-400 font-black uppercase tracking-wider block">Código de Confirmação</span>
-                        <span id="track-confirm-code" class="text-lg font-black text-rpfood-red tracking-widest">----</span>
-                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="restaurants-grid"></div>
+                </div>
+            </section>
+
+            <!-- RESTAURANT DETAIL & MENU VIEW -->
+            <section id="client-restaurant" class="hidden space-y-6">
+                <button onclick="app.showClientView('home')" class="inline-flex items-center gap-2 text-xs font-bold text-gray-600 hover:text-rpfood-red transition bg-white px-3 py-2 rounded-xl border border-gray-200 shadow-sm">
+                    <i class="fa-solid fa-arrow-left"></i> Voltar para Restaurantes
+                </button>
+
+                <div id="restaurant-header-info" class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm"></div>
+
+                <div class="border-b border-gray-200 sticky top-24 bg-white/95 backdrop-blur z-20 pt-2 shadow-sm rounded-b-xl">
+                    <nav class="flex space-x-6 overflow-x-auto hide-scrollbar px-2" id="menu-categories-nav"></nav>
                 </div>
 
-                <!-- SIMULATED COURIER & LIVE CHAT -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-100 pt-4">
-                    <!-- Courier Info -->
-                    <div class="bg-gray-50 rounded-2xl p-4 border border-gray-200/60 flex items-center gap-3">
-                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80" class="w-12 h-12 rounded-full object-cover border-2 border-rpfood-red shadow-sm" alt="Entregador">
-                        <div class="flex-1">
-                            <span class="text-[10px] text-gray-400 font-bold uppercase block">Entregador parceiro</span>
-                            <h5 class="font-bold text-sm text-gray-900">Lucas 'Rio Preto' Silva</h5>
-                            <p class="text-xs text-yellow-600 font-extrabold"><i class="fa-solid fa-star"></i> 4.95 (1.200+ entregas)</p>
+                <div id="restaurant-menu-items" class="space-y-8"></div>
+            </section>
+
+            <!-- TRACKING ORDER VIEW -->
+            <section id="client-tracking" class="hidden space-y-6 max-w-3xl mx-auto">
+                <div class="bg-white rounded-3xl border border-gray-100 shadow-xl p-6 sm:p-8 space-y-6">
+                    <div class="flex items-center justify-between border-b border-gray-100 pb-4">
+                        <div>
+                            <span class="text-xs text-gray-400 font-bold uppercase tracking-wider block">Acompanhar Pedido</span>
+                            <h2 class="text-2xl font-black text-gray-900">Pedido <span id="track-order-id">#0000</span></h2>
                         </div>
+                        <span id="track-status-badge" class="bg-yellow-100 text-yellow-800 text-xs font-extrabold px-3.5 py-1.5 rounded-full border border-yellow-200">
+                            Confirmado
+                        </span>
                     </div>
 
-                    <!-- Mini Chat Box -->
-                    <div class="bg-gray-50 rounded-2xl p-4 border border-gray-200/60 flex flex-col justify-between h-44">
-                        <div class="flex items-center justify-between border-b pb-1.5">
-                            <span class="text-xs font-bold text-gray-700"><i class="fa-solid fa-comments text-rpfood-red"></i> Chat do Pedido</span>
-                            <span class="text-[10px] text-green-600 font-bold">● Online</span>
-                        </div>
-                        <div id="chat-messages" class="flex-1 overflow-y-auto text-xs space-y-2 my-2 pr-1 hide-scrollbar">
-                            <div class="bg-white p-2 rounded-lg border border-gray-200 max-w-[85%] text-gray-700">
-                                Olá! Seu pedido já está sendo preparado pela cozinha.
+                    <!-- TIMELINE -->
+                    <div class="py-4">
+                        <div class="grid grid-cols-4 relative text-center">
+                            <div class="absolute top-1/2 left-0 right-0 h-1 bg-gray-200 -translate-y-1/2 z-0"></div>
+                            <div id="tracking-progress-fill" class="absolute top-1/2 left-0 h-1 bg-rpfood-red -translate-y-1/2 z-0 transition-all duration-700" style="width: 25%;"></div>
+
+                            <div class="relative z-10 flex flex-col items-center gap-2">
+                                <div id="step-1-icon" class="w-10 h-10 rounded-full bg-rpfood-red text-white flex items-center justify-center font-bold text-sm border-4 border-white shadow-md">
+                                    <i class="fa-solid fa-receipt"></i>
+                                </div>
+                                <span class="text-[11px] font-bold text-gray-800">Confirmado</span>
+                            </div>
+
+                            <div class="relative z-10 flex flex-col items-center gap-2">
+                                <div id="step-2-icon" class="w-10 h-10 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center font-bold text-sm border-4 border-white shadow-md">
+                                    <i class="fa-solid fa-utensils"></i>
+                                </div>
+                                <span class="text-[11px] font-bold text-gray-400">Preparo</span>
+                            </div>
+
+                            <div class="relative z-10 flex flex-col items-center gap-2">
+                                <div id="step-3-icon" class="w-10 h-10 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center font-bold text-sm border-4 border-white shadow-md">
+                                    <i class="fa-solid fa-motorcycle"></i>
+                                </div>
+                                <span class="text-[11px] font-bold text-gray-400">A Caminho</span>
+                            </div>
+
+                            <div class="relative z-10 flex flex-col items-center gap-2">
+                                <div id="step-4-icon" class="w-10 h-10 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center font-bold text-sm border-4 border-white shadow-md">
+                                    <i class="fa-solid fa-house-chimney"></i>
+                                </div>
+                                <span class="text-[11px] font-bold text-gray-400">Entregue</span>
                             </div>
                         </div>
-                        <div class="flex gap-2">
-                            <input type="text" id="chat-input" placeholder="Enviar mensagem..." class="flex-1 text-xs border rounded-lg px-2.5 py-1.5 outline-none focus:border-rpfood-red bg-white">
-                            <button onclick="app.sendChatMessage()" class="bg-rpfood-red text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-rpfood-darkRed transition">
-                                <i class="fa-solid fa-paper-plane"></i>
-                            </button>
+                    </div>
+
+                    <!-- TIMER & CONFIRMATION CODE -->
+                    <div class="bg-red-50/60 rounded-2xl p-5 border border-red-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 bg-rpfood-red text-white rounded-2xl flex items-center justify-center text-xl shadow-md shadow-red-200">
+                                <i class="fa-regular fa-clock"></i>
+                            </div>
+                            <div>
+                                <span class="text-xs text-gray-500 font-semibold block">Previsão estimada</span>
+                                <h4 id="track-eta" class="text-xl font-black text-gray-900">25 - 35 min</h4>
+                            </div>
+                        </div>
+
+                        <div class="bg-white px-4 py-2.5 rounded-xl border border-red-200 text-center shadow-sm">
+                            <span class="text-[10px] text-gray-400 font-black uppercase tracking-wider block">Código de Confirmação</span>
+                            <span id="track-confirm-code" class="text-lg font-black text-rpfood-red tracking-widest">----</span>
                         </div>
                     </div>
+
+                    <!-- CHAT INTERACTIVE BOX -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-100 pt-4">
+                        <div class="bg-gray-50 rounded-2xl p-4 border border-gray-200/60 flex items-center gap-3">
+                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80" class="w-12 h-12 rounded-full object-cover border-2 border-rpfood-red shadow-sm" alt="Entregador">
+                            <div class="flex-1">
+                                <span class="text-[10px] text-gray-400 font-bold uppercase block">Entregador parceiro</span>
+                                <h5 class="font-bold text-sm text-gray-900">Lucas 'Rio Preto' Silva</h5>
+                                <p class="text-xs text-yellow-600 font-extrabold"><i class="fa-solid fa-star"></i> 4.95 (1.200+ entregas)</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-50 rounded-2xl p-4 border border-gray-200/60 flex flex-col justify-between h-44">
+                            <div class="flex items-center justify-between border-b pb-1.5">
+                                <span class="text-xs font-bold text-gray-700"><i class="fa-solid fa-comments text-rpfood-red"></i> Chat com o Estabelecimento</span>
+                                <span class="text-[10px] text-green-600 font-bold">● Online</span>
+                            </div>
+                            <div id="chat-messages" class="flex-1 overflow-y-auto text-xs space-y-2 my-2 pr-1 hide-scrollbar">
+                                <div class="bg-white p-2 rounded-lg border border-gray-200 max-w-[85%] text-gray-700">
+                                    Olá! Recebemos seu pedido e já estamos preparando.
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <input type="text" id="chat-input" placeholder="Enviar mensagem..." class="flex-1 text-xs border rounded-lg px-2.5 py-1.5 outline-none focus:border-rpfood-red bg-white">
+                                <button onclick="app.sendChatMessage()" class="bg-rpfood-red text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-rpfood-darkRed transition">
+                                    <i class="fa-solid fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ITEMS SUMMARY -->
+                    <div class="border-t border-gray-100 pt-4">
+                        <h4 class="font-bold text-sm text-gray-900 mb-2">Resumo dos itens</h4>
+                        <ul id="track-items-list" class="text-xs text-gray-600 divide-y divide-gray-100"></ul>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- VIEW 2: RESTAURANT MANAGER (DASHBOARD & ORDERS KANBAN) -->
+        <!-- ================================================================= -->
+        <div id="wrapper-restaurant" class="view-wrapper hidden space-y-6">
+            
+            <!-- RESTAURANT SELECTOR HEADER -->
+            <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div>
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block">Painel do Estabelecimento</span>
+                    <h2 class="text-2xl font-black text-gray-900" id="gestor-rest-name">Carregando...</h2>
                 </div>
 
-                <!-- ITEMS SUMMARY -->
-                <div class="border-t border-gray-100 pt-4">
-                    <h4 class="font-bold text-sm text-gray-900 mb-2">Resumo dos itens</h4>
-                    <ul id="track-items-list" class="text-xs text-gray-600 divide-y divide-gray-100">
-                        <!-- Injected via JS -->
-                    </ul>
+                <div class="flex items-center gap-3 w-full md:w-auto">
+                    <label class="text-xs font-bold text-gray-600 whitespace-nowrap">Gerenciar Loja:</label>
+                    <select id="gestor-rest-select" onchange="app.switchManagedRestaurant(this.value)" class="bg-gray-50 border border-gray-200 font-bold text-xs rounded-xl p-2.5 text-gray-800 outline-none focus:ring-2 focus:ring-rpfood-red flex-1 md:w-64"></select>
+                </div>
+            </div>
+
+            <!-- METRICS CARDS -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                    <span class="text-xs text-gray-400 font-bold block">Faturamento do Dia</span>
+                    <h3 class="text-xl font-black text-green-600 mt-1" id="gestor-metric-sales">R$ 0,00</h3>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                    <span class="text-xs text-gray-400 font-bold block">Pedidos Realizados</span>
+                    <h3 class="text-xl font-black text-gray-900 mt-1" id="gestor-metric-orders">0</h3>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                    <span class="text-xs text-gray-400 font-bold block">Ticket Médio</span>
+                    <h3 class="text-xl font-black text-gray-900 mt-1" id="gestor-metric-ticket">R$ 0,00</h3>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                    <span class="text-xs text-gray-400 font-bold block">Avaliação Média</span>
+                    <h3 class="text-xl font-black text-yellow-500 mt-1" id="gestor-metric-rating">★ 5.0</h3>
+                </div>
+            </div>
+
+            <!-- TABS (PEDIDOS / CARDÁPIO) -->
+            <div class="flex border-b border-gray-200 gap-6">
+                <button onclick="app.switchGestorTab('orders')" id="tab-btn-orders" class="pb-3 text-sm font-black border-b-2 border-rpfood-red text-rpfood-red">
+                    <i class="fa-solid fa-list-check mr-1"></i> Gestor de Pedidos (Ao Vivo)
+                </button>
+                <button onclick="app.switchGestorTab('menu')" id="tab-btn-menu" class="pb-3 text-sm font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-800">
+                    <i class="fa-solid fa-utensils mr-1"></i> Gestão de Cardápio (DMR)
+                </button>
+            </div>
+
+            <!-- TAB CONTENT 1: ORDERS KANBAN -->
+            <div id="gestor-tab-orders" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                
+                <!-- COL 1: NOVOS -->
+                <div class="bg-gray-100/70 p-4 rounded-2xl space-y-3">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-black text-gray-700 uppercase tracking-wider"><i class="fa-solid fa-bell text-yellow-500 mr-1"></i> Novos Pedidos</span>
+                        <span id="count-kanban-1" class="bg-yellow-200 text-yellow-800 text-[10px] font-black px-2 py-0.5 rounded-full">0</span>
+                    </div>
+                    <div id="kanban-col-1" class="space-y-3 min-h-[300px]"></div>
+                </div>
+
+                <!-- COL 2: EM PREPARO -->
+                <div class="bg-gray-100/70 p-4 rounded-2xl space-y-3">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-black text-gray-700 uppercase tracking-wider"><i class="fa-solid fa-utensils text-orange-500 mr-1"></i> Em Preparo</span>
+                        <span id="count-kanban-2" class="bg-orange-200 text-orange-800 text-[10px] font-black px-2 py-0.5 rounded-full">0</span>
+                    </div>
+                    <div id="kanban-col-2" class="space-y-3 min-h-[300px]"></div>
+                </div>
+
+                <!-- COL 3: SAIU PRA ENTREGA -->
+                <div class="bg-gray-100/70 p-4 rounded-2xl space-y-3">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-black text-gray-700 uppercase tracking-wider"><i class="fa-solid fa-motorcycle text-blue-500 mr-1"></i> A Caminho</span>
+                        <span id="count-kanban-3" class="bg-blue-200 text-blue-800 text-[10px] font-black px-2 py-0.5 rounded-full">0</span>
+                    </div>
+                    <div id="kanban-col-3" class="space-y-3 min-h-[300px]"></div>
+                </div>
+
+                <!-- COL 4: CONCLUÍDOS -->
+                <div class="bg-gray-100/70 p-4 rounded-2xl space-y-3">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-black text-gray-700 uppercase tracking-wider"><i class="fa-solid fa-circle-check text-green-500 mr-1"></i> Concluídos</span>
+                        <span id="count-kanban-4" class="bg-green-200 text-green-800 text-[10px] font-black px-2 py-0.5 rounded-full">0</span>
+                    </div>
+                    <div id="kanban-col-4" class="space-y-3 min-h-[300px]"></div>
                 </div>
 
             </div>
-        </section>
+
+            <!-- TAB CONTENT 2: DIGITAL MENU MANAGEMENT -->
+            <div id="gestor-tab-menu" class="hidden bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-6">
+                <div class="flex justify-between items-center border-b pb-4">
+                    <div>
+                        <h3 class="font-black text-lg text-gray-900">Cardápio do Estabelecimento</h3>
+                        <p class="text-xs text-gray-500">Adicione novos itens ou controle o estoque (pausar/ativar)</p>
+                    </div>
+                    <button onclick="app.openNewProductModal()" class="bg-rpfood-red text-white text-xs font-extrabold px-4 py-2.5 rounded-xl hover:bg-rpfood-darkRed transition shadow-sm">
+                        <i class="fa-solid fa-plus mr-1"></i> Cadastrar Novo Prato
+                    </button>
+                </div>
+
+                <div id="gestor-menu-list" class="space-y-4"></div>
+            </div>
+
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- VIEW 3: ADMIN MASTER PLATFORM (RP-FOOD ADMIN) -->
+        <!-- ================================================================= -->
+        <div id="wrapper-admin" class="view-wrapper hidden space-y-6">
+            
+            <div class="bg-gray-900 text-white rounded-3xl p-6 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div>
+                    <span class="bg-rpfood-red text-white text-[10px] font-black px-2.5 py-0.5 rounded uppercase tracking-wider inline-block mb-1">Painel Master Admin</span>
+                    <h2 class="text-2xl font-black">Visão Geral RP-FOOD</h2>
+                    <p class="text-xs text-gray-400">Monitoramento global do marketplace e empresas parceiras (Tenants)</p>
+                </div>
+                <button onclick="app.openNewTenantModal()" class="bg-rpfood-red hover:bg-rpfood-darkRed text-white font-extrabold text-xs px-4 py-3 rounded-xl transition shadow-lg shadow-red-900/50 flex items-center gap-2">
+                    <i class="fa-solid fa-store"></i> Cadastrar Nova Empresa Parceira
+                </button>
+            </div>
+
+            <!-- GLOBAL PLATFORM METRICS -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                    <span class="text-xs text-gray-400 font-bold block">Volume Geral Transacionado (GMV)</span>
+                    <h3 class="text-2xl font-black text-gray-900 mt-1" id="admin-gmv">R$ 0,00</h3>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                    <span class="text-xs text-gray-400 font-bold block">Comissão RP-FOOD (12%)</span>
+                    <h3 class="text-2xl font-black text-rpfood-red mt-1" id="admin-commission">R$ 0,00</h3>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                    <span class="text-xs text-gray-400 font-bold block">Total de Pedidos</span>
+                    <h3 class="text-2xl font-black text-gray-900 mt-1" id="admin-total-orders">0</h3>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                    <span class="text-xs text-gray-400 font-bold block">Empresas Cadastradas</span>
+                    <h3 class="text-2xl font-black text-blue-600 mt-1" id="admin-total-tenants">0</h3>
+                </div>
+            </div>
+
+            <!-- TENANTS / RESTAURANTS TABLE -->
+            <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-4">
+                <h3 class="font-black text-lg text-gray-900">Restaurantes Parceiros Cadastrados</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-gray-600">
+                        <thead class="bg-gray-50 text-gray-800 uppercase font-extrabold border-b">
+                            <tr>
+                                <th class="p-3">Empresa / Razão Social</th>
+                                <th class="p-3">CNPJ / Categoria</th>
+                                <th class="p-3">Taxa / Ped. Mínimo</th>
+                                <th class="p-3">Status</th>
+                                <th class="p-3 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-tenants-table" class="divide-y divide-gray-100"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
 
     </main>
 
-    <!-- ================= DRAWER & MODALS ================= -->
+    <!-- ================================================================= -->
+    <!-- DRAWER & MODALS CONTAINER -->
+    <!-- ================================================================= -->
 
-    <!-- 1. CART SIDEBAR DRAWER -->
+    <!-- CART SIDEBAR DRAWER -->
     <div id="cart-drawer-overlay" onclick="app.toggleCartDrawer()" class="fixed inset-0 bg-black/60 z-40 hidden transition-opacity duration-300 opacity-0"></div>
     <aside id="cart-drawer" class="fixed right-0 top-0 bottom-0 w-full sm:w-96 bg-white z-50 shadow-2xl flex flex-col transform translate-x-full transition-transform duration-300 ease-in-out">
-        
-        <!-- Header Cart -->
         <div class="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
             <div class="flex items-center gap-2">
                 <i class="fa-solid fa-bag-shopping text-rpfood-red text-lg"></i>
                 <h3 class="font-bold text-base text-gray-900">Sua Sacola</h3>
             </div>
-            <button onclick="app.toggleCartDrawer()" class="text-gray-400 hover:text-gray-600 text-2xl font-bold p-1">
-                &times;
-            </button>
+            <button onclick="app.toggleCartDrawer()" class="text-gray-400 hover:text-gray-600 text-2xl font-bold p-1">&times;</button>
         </div>
 
-        <!-- MINIMUM ORDER PROGRESS BAR -->
         <div id="min-order-bar-container" class="bg-red-50 p-3 border-b border-red-100 text-xs hidden">
             <div class="flex justify-between font-bold text-gray-700 mb-1">
                 <span>Pedido Mínimo do Restaurante:</span>
@@ -335,21 +495,15 @@
             <p id="min-order-alert" class="text-[10px] text-rpfood-red font-bold mt-1 text-center"></p>
         </div>
 
-        <!-- Cart Items List -->
-        <div id="cart-items-container" class="flex-1 overflow-y-auto p-4 space-y-4">
-            <!-- Rendered via JS -->
-        </div>
+        <div id="cart-items-container" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
 
-        <!-- Cart Footer -->
         <div id="cart-footer" class="p-4 border-t border-gray-100 bg-gray-50 space-y-3">
-            <!-- Coupon Input -->
             <div class="flex gap-2">
                 <input type="text" id="coupon-input" placeholder="Cupom (RPFOOD10, FRETEGRATIS)" class="flex-1 border rounded-xl px-3 py-2 text-xs uppercase font-bold outline-none focus:border-rpfood-red bg-white">
                 <button onclick="app.applyCoupon()" class="bg-gray-900 text-white text-xs font-bold px-4 rounded-xl hover:bg-black transition">Aplicar</button>
             </div>
             <div id="coupon-message" class="text-[11px] font-bold hidden"></div>
 
-            <!-- Totals -->
             <div class="space-y-1.5 text-xs">
                 <div class="flex justify-between text-gray-500">
                     <span>Subtotal</span>
@@ -369,7 +523,6 @@
                 </div>
             </div>
 
-            <!-- Checkout Button -->
             <button id="btn-proceed-checkout" onclick="app.openCheckoutModal()" class="w-full bg-rpfood-red hover:bg-rpfood-darkRed text-white font-black py-3 rounded-xl transition shadow-lg shadow-red-200 flex items-center justify-center gap-2 text-sm">
                 <span>Ir para o Checkout</span>
                 <i class="fa-solid fa-arrow-right"></i>
@@ -377,14 +530,12 @@
         </div>
     </aside>
 
-    <!-- 2. PRODUCT ITEM CUSTOMIZER MODAL -->
+    <!-- PRODUCT CUSTOMIZER MODAL -->
     <div id="product-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-3 sm:p-4">
         <div class="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
             <div class="relative h-44 sm:h-52 flex-shrink-0">
                 <img id="modal-product-img" src="" class="w-full h-full object-cover" alt="Prato">
-                <button onclick="app.closeProductModal()" class="absolute top-3 right-3 bg-white/90 hover:bg-white text-gray-800 w-8 h-8 rounded-full flex items-center justify-center font-black shadow-md transition">
-                    &times;
-                </button>
+                <button onclick="app.closeProductModal()" class="absolute top-3 right-3 bg-white/90 hover:bg-white text-gray-800 w-8 h-8 rounded-full flex items-center justify-center font-black shadow-md transition">&times;</button>
             </div>
 
             <div class="p-5 flex-1 overflow-y-auto space-y-4">
@@ -394,33 +545,25 @@
                     <p id="modal-product-price" class="text-base font-extrabold text-rpfood-red mt-2"></p>
                 </div>
 
-                <!-- MANDATORY SELECTION (E.G. SIZE OR DONENESS) -->
                 <div class="border-t border-gray-100 pt-3">
                     <div class="flex justify-between items-center mb-2">
                         <h4 class="font-bold text-xs uppercase tracking-wider text-gray-800">Escolha o Tamanho / Opção</h4>
                         <span class="text-[10px] bg-rpfood-red text-white font-bold px-2 py-0.5 rounded">Obrigatório</span>
                     </div>
-                    <div class="space-y-2" id="modal-mandatory-options">
-                        <!-- Radio options injected dynamically -->
-                    </div>
+                    <div class="space-y-2" id="modal-mandatory-options"></div>
                 </div>
 
-                <!-- OPTIONAL EXTRAS -->
                 <div class="border-t border-gray-100 pt-3">
                     <h4 class="font-bold text-xs uppercase tracking-wider text-gray-800 mb-2">Adicionais Opcionais</h4>
-                    <div class="space-y-2" id="modal-product-extras">
-                        <!-- Checkboxes injected dynamically -->
-                    </div>
+                    <div class="space-y-2" id="modal-product-extras"></div>
                 </div>
 
-                <!-- OBSERVATION -->
                 <div class="border-t border-gray-100 pt-3">
                     <label class="font-bold text-xs uppercase tracking-wider text-gray-800 block mb-1">Alguma observação?</label>
                     <textarea id="modal-product-obs" placeholder="Ex: Sem salada, molho à parte..." class="w-full border border-gray-200 rounded-xl p-2.5 text-xs focus:outline-none focus:border-rpfood-red bg-gray-50" rows="2"></textarea>
                 </div>
             </div>
 
-            <!-- Modal Bottom Action -->
             <div class="p-4 border-t border-gray-100 flex items-center justify-between gap-3 bg-gray-50">
                 <div class="flex items-center border border-gray-200 rounded-xl bg-white">
                     <button onclick="app.updateModalQty(-1)" class="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-l-xl font-black text-sm">-</button>
@@ -435,7 +578,7 @@
         </div>
     </div>
 
-    <!-- 3. CHECKOUT MODAL -->
+    <!-- CHECKOUT MODAL -->
     <div id="checkout-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-3 sm:p-4">
         <div class="bg-white rounded-3xl max-w-xl w-full max-h-[92vh] flex flex-col overflow-hidden shadow-2xl">
             <div class="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
@@ -446,7 +589,6 @@
             </div>
 
             <div class="p-6 flex-1 overflow-y-auto space-y-6">
-                <!-- Delivery Address Summary -->
                 <div>
                     <div class="flex justify-between items-center mb-1">
                         <h4 class="font-extrabold text-xs text-gray-900 uppercase tracking-wider"><i class="fa-solid fa-location-dot text-rpfood-red"></i> Endereço de Entrega</h4>
@@ -458,10 +600,9 @@
                     </div>
                 </div>
 
-                <!-- Payment Selection -->
                 <div>
                     <h4 class="font-extrabold text-xs text-gray-900 uppercase tracking-wider mb-3"><i class="fa-solid fa-wallet text-rpfood-red"></i> Forma de Pagamento</h4>
-                    <div class="grid grid-cols-2 gap-2.5" id="payment-methods">
+                    <div class="grid grid-cols-2 gap-2.5">
                         <label class="flex items-center gap-2.5 p-3 border border-gray-200 rounded-xl cursor-pointer hover:border-rpfood-red transition bg-white">
                             <input type="radio" name="payment" value="PIX" checked onchange="app.handlePaymentChange(this.value)" class="text-rpfood-red focus:ring-rpfood-red">
                             <div>
@@ -469,7 +610,6 @@
                                 <p class="text-[10px] text-gray-400">Aprovação Instantânea</p>
                             </div>
                         </label>
-
                         <label class="flex items-center gap-2.5 p-3 border border-gray-200 rounded-xl cursor-pointer hover:border-rpfood-red transition bg-white">
                             <input type="radio" name="payment" value="Cartão de Crédito" onchange="app.handlePaymentChange(this.value)" class="text-rpfood-red focus:ring-rpfood-red">
                             <div>
@@ -477,15 +617,13 @@
                                 <p class="text-[10px] text-gray-400">Visa, Mastercard</p>
                             </div>
                         </label>
-
                         <label class="flex items-center gap-2.5 p-3 border border-gray-200 rounded-xl cursor-pointer hover:border-rpfood-red transition bg-white">
                             <input type="radio" name="payment" value="VR / Refeição" onchange="app.handlePaymentChange(this.value)" class="text-rpfood-red focus:ring-rpfood-red">
                             <div>
                                 <p class="text-xs font-bold text-gray-900">VR / VA</p>
-                                <p class="text-[10px] text-gray-400">Alelo, Sodexo, VR</p>
+                                <p class="text-[10px] text-gray-400">Alelo, Sodexo</p>
                             </div>
                         </label>
-
                         <label class="flex items-center gap-2.5 p-3 border border-gray-200 rounded-xl cursor-pointer hover:border-rpfood-red transition bg-white">
                             <input type="radio" name="payment" value="Dinheiro" onchange="app.handlePaymentChange(this.value)" class="text-rpfood-red focus:ring-rpfood-red">
                             <div>
@@ -495,20 +633,17 @@
                         </label>
                     </div>
 
-                    <!-- Dynamic Cash Change Input -->
                     <div id="cash-change-box" class="mt-3 hidden bg-yellow-50 p-3 rounded-xl border border-yellow-200">
                         <label class="text-xs font-bold text-gray-800 block mb-1">Precisa de troco para quanto?</label>
-                        <input type="text" id="cash-change-input" placeholder="Ex: R$ 50,00 (deixe em branco se não precisar)" class="w-full text-xs border rounded-lg p-2 outline-none focus:border-rpfood-red bg-white">
+                        <input type="text" id="cash-change-input" placeholder="Ex: R$ 50,00" class="w-full text-xs border rounded-lg p-2 outline-none focus:border-rpfood-red bg-white">
                     </div>
 
-                    <!-- Simulated PIX QR Box -->
                     <div id="pix-info-box" class="mt-3 bg-red-50/50 p-3 rounded-xl border border-red-100 flex items-center gap-3">
                         <i class="fa-solid fa-qrcode text-2xl text-rpfood-red"></i>
                         <p class="text-[11px] text-gray-600 font-medium">O código PIX Copia e Cola será gerado logo após confirmar o pedido.</p>
                     </div>
                 </div>
 
-                <!-- CPF ON INVOICE -->
                 <div class="border-t border-gray-100 pt-3">
                     <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-800">
                         <input type="checkbox" id="cpf-checkbox" onchange="document.getElementById('cpf-input-box').classList.toggle('hidden', !this.checked)" class="rounded text-rpfood-red focus:ring-rpfood-red">
@@ -519,7 +654,6 @@
                     </div>
                 </div>
 
-                <!-- Summary Breakdown -->
                 <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200/80 space-y-1.5 text-xs">
                     <div class="flex justify-between text-gray-600">
                         <span>Subtotal dos Itens:</span>
@@ -540,7 +674,6 @@
                 </div>
             </div>
 
-            <!-- Submit Order -->
             <div class="p-4 border-t border-gray-100 bg-gray-50">
                 <button onclick="app.placeOrder()" class="w-full bg-green-600 hover:bg-green-700 text-white font-black py-3.5 rounded-xl transition shadow-lg shadow-green-100 flex items-center justify-center gap-2 text-sm">
                     <i class="fa-solid fa-circle-check text-base"></i>
@@ -550,7 +683,7 @@
         </div>
     </div>
 
-    <!-- 4. ADDRESS EDIT MODAL -->
+    <!-- ADDRESS EDIT MODAL -->
     <div id="address-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-3 sm:p-4">
         <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <div class="flex justify-between items-center">
@@ -569,12 +702,12 @@
                     </div>
                     <div>
                         <label class="font-bold text-gray-700 block mb-1">Complemento</label>
-                        <input type="text" id="addr-comp" placeholder="Apt 42 / Bloco B" class="w-full border rounded-xl p-2.5 outline-none focus:border-rpfood-red">
+                        <input type="text" id="addr-comp" placeholder="Apt 42" class="w-full border rounded-xl p-2.5 outline-none focus:border-rpfood-red">
                     </div>
                 </div>
                 <div>
                     <label class="font-bold text-gray-700 block mb-1">Bairro *</label>
-                    <input type="text" id="addr-neighborhood" placeholder="Ex: Redentora, Centro, Higienópolis" class="w-full border rounded-xl p-2.5 outline-none focus:border-rpfood-red">
+                    <input type="text" id="addr-neighborhood" placeholder="Ex: Redentora, Centro" class="w-full border rounded-xl p-2.5 outline-none focus:border-rpfood-red">
                 </div>
                 <button onclick="app.saveAddress()" class="w-full bg-rpfood-red text-white font-black py-3 rounded-xl hover:bg-rpfood-darkRed transition shadow-md shadow-red-200">
                     Salvar Endereço
@@ -583,15 +716,105 @@
         </div>
     </div>
 
-    <!-- 5. ORDERS HISTORY MODAL -->
+    <!-- ORDERS HISTORY MODAL -->
     <div id="orders-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-3 sm:p-4">
         <div class="bg-white rounded-3xl max-w-lg w-full max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
             <div class="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
                 <h3 class="font-black text-base text-gray-900"><i class="fa-solid fa-receipt text-rpfood-red"></i> Histórico de Pedidos</h3>
                 <button onclick="app.closeOrdersModal()" class="text-gray-400 text-2xl font-bold">&times;</button>
             </div>
-            <div id="orders-history-list" class="p-4 flex-1 overflow-y-auto space-y-3">
-                <!-- Orders injected via JS -->
+            <div id="orders-history-list" class="p-4 flex-1 overflow-y-auto space-y-3"></div>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD NEW TENANT (ADMIN MASTER) -->
+    <div id="modal-new-tenant" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+            <div class="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+                <h3 class="font-black text-base text-gray-900">Cadastrar Nova Empresa Parceira</h3>
+                <button onclick="app.closeNewTenantModal()" class="text-gray-400 text-2xl font-bold">&times;</button>
+            </div>
+            <div class="p-6 flex-1 overflow-y-auto space-y-3 text-xs">
+                <div>
+                    <label class="font-bold text-gray-700 block mb-1">Nome Fantasia *</label>
+                    <input type="text" id="tenant-name" placeholder="Ex: Padaria & Confeitaria Rio Preto" class="w-full border rounded-xl p-2.5 outline-none focus:border-rpfood-red">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="font-bold text-gray-700 block mb-1">CNPJ *</label>
+                        <input type="text" id="tenant-cnpj" placeholder="00.000.000/0001-00" class="w-full border rounded-xl p-2.5 outline-none focus:border-rpfood-red">
+                    </div>
+                    <div>
+                        <label class="font-bold text-gray-700 block mb-1">Categoria *</label>
+                        <select id="tenant-category" class="w-full border rounded-xl p-2.5 outline-none focus:border-rpfood-red bg-white">
+                            <option value="burger">Lanches</option>
+                            <option value="marmita">Marmitas</option>
+                            <option value="pizza">Pizzaria</option>
+                            <option value="japanese">Japonês</option>
+                            <option value="dessert">Doces/Padaria</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="font-bold text-gray-700 block mb-1">Taxa Entrega (R$)</label>
+                        <input type="number" id="tenant-fee" placeholder="5.00" class="w-full border rounded-xl p-2.5 outline-none focus:border-rpfood-red">
+                    </div>
+                    <div>
+                        <label class="font-bold text-gray-700 block mb-1">Ped. Mínimo (R$)</label>
+                        <input type="number" id="tenant-min" placeholder="20.00" class="w-full border rounded-xl p-2.5 outline-none focus:border-rpfood-red">
+                    </div>
+                    <div>
+                        <label class="font-bold text-gray-700 block mb-1">Tempo Est.</label>
+                        <input type="text" id="tenant-time" placeholder="30-40 min" class="w-full border rounded-xl p-2.5 outline-none focus:border-rpfood-red">
+                    </div>
+                </div>
+                <div>
+                    <label class="font-bold text-gray-700 block mb-1">URL da Imagem / Logo</label>
+                    <input type="text" id="tenant-image" placeholder="https://images.unsplash.com/..." class="w-full border rounded-xl p-2.5 outline-none focus:border-rpfood-red">
+                </div>
+            </div>
+            <div class="p-4 border-t bg-gray-50">
+                <button onclick="app.saveNewTenant()" class="w-full bg-rpfood-red text-white font-black py-3 rounded-xl hover:bg-rpfood-darkRed transition shadow-md">
+                    Salvar e Ativar Empresa
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD NEW PRODUCT (RESTAURANT GESTOR) -->
+    <div id="modal-new-product" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="font-black text-base text-gray-900">Cadastrar Novo Prato / Produto</h3>
+                <button onclick="app.closeNewProductModal()" class="text-gray-400 text-2xl font-bold">&times;</button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="font-bold text-gray-700 block mb-1">Nome do Prato *</label>
+                    <input type="text" id="prod-name" placeholder="Ex: X-Salada Especial" class="w-full border rounded-xl p-2.5 outline-none focus:border-rpfood-red">
+                </div>
+                <div>
+                    <label class="font-bold text-gray-700 block mb-1">Descrição</label>
+                    <textarea id="prod-desc" placeholder="Ingredientes e detalhes..." class="w-full border rounded-xl p-2.5 outline-none focus:border-rpfood-red" rows="2"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="font-bold text-gray-700 block mb-1">Preço (R$) *</label>
+                        <input type="number" id="prod-price" placeholder="25.90" class="w-full border rounded-xl p-2.5 outline-none focus:border-rpfood-red">
+                    </div>
+                    <div>
+                        <label class="font-bold text-gray-700 block mb-1">Categoria do Menu *</label>
+                        <input type="text" id="prod-cat" placeholder="Ex: Mais Pedidos, Lanches" class="w-full border rounded-xl p-2.5 outline-none focus:border-rpfood-red">
+                    </div>
+                </div>
+                <div>
+                    <label class="font-bold text-gray-700 block mb-1">URL da Foto</label>
+                    <input type="text" id="prod-img" placeholder="https://images.unsplash.com/..." class="w-full border rounded-xl p-2.5 outline-none focus:border-rpfood-red">
+                </div>
+                <button onclick="app.saveNewProduct()" class="w-full bg-rpfood-red text-white font-black py-3 rounded-xl hover:bg-rpfood-darkRed transition shadow-md">
+                    Adicionar ao Cardápio
+                </button>
             </div>
         </div>
     </div>
@@ -599,33 +822,31 @@
     <!-- TOAST NOTIFICATION -->
     <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs font-bold px-5 py-3 rounded-full shadow-2xl z-50 transform translate-y-24 opacity-0 transition-all duration-300 flex items-center gap-3">
         <i id="toast-icon" class="fa-solid fa-circle-check text-green-400 text-base"></i>
-        <span id="toast-message">Mensagem de teste</span>
+        <span id="toast-message">Mensagem</span>
     </div>
 
-    <!-- SCRIPT LOGIC -->
+    <!-- JavaScript Application Logic -->
     <script>
-        // MOCK DATA (RIO PRETO FOCUSED RESTAURANTS & MENUS)
-        const categoriesData = [
+        // SEED DATA INITIALIZATION
+        const initialCategories = [
             { id: 'all', name: 'Tudo', icon: 'fa-utensils' },
             { id: 'burger', name: 'Lanches', icon: 'fa-burger' },
             { id: 'marmita', name: 'Marmitas', icon: 'fa-box' },
             { id: 'pizza', name: 'Pizza', icon: 'fa-pizza-slice' },
             { id: 'japanese', name: 'Japonês', icon: 'fa-fish' },
-            { id: 'acai', name: 'Açaí', icon: 'fa-bowl-food' },
-            { id: 'dessert', name: 'Doces', icon: 'fa-ice-cream' },
-            { id: 'healthy', name: 'Saudável', icon: 'fa-leaf' }
+            { id: 'dessert', name: 'Doces', icon: 'fa-ice-cream' }
         ];
 
-        const quickFiltersData = [
+        const initialQuickFilters = [
             { id: 'free-delivery', label: 'Entrega Grátis', icon: 'fa-truck-fast' },
             { id: 'super', label: 'Super Restaurante', icon: 'fa-award' },
-            { id: 'top-rated', label: 'Avaliação 4.8+', icon: 'fa-star' },
-            { id: 'under-20', label: 'Até R$ 20', icon: 'fa-tag' }
+            { id: 'top-rated', label: 'Avaliação 4.8+', icon: 'fa-star' }
         ];
 
-        const restaurantsData = [
+        const initialRestaurants = [
             {
                 id: 1,
+                cnpj: '12.345.678/0001-90',
                 name: 'RP Burger & Smashes',
                 category: 'burger',
                 rating: 4.9,
@@ -633,40 +854,16 @@
                 deliveryFee: 0.00,
                 minOrder: 25.00,
                 isSuper: true,
+                status: 'active',
                 image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&auto=format&fit=crop&q=80',
-                banner: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=1000&auto=format&fit=crop&q=80',
                 menu: [
-                    { 
-                        id: 101, 
-                        name: 'RP Double Smash Cheese', 
-                        desc: '2 hambúrgueres smash de 90g, duplo queijo prato derretido, maionese verde artesanal no pão brioche amanteigado.', 
-                        price: 28.90, 
-                        category: 'Mais Pedidos', 
-                        image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&auto=format&fit=crop&q=80',
-                        mandatoryTitle: 'Ponto da Carne',
-                        mandatoryOptions: ['Bem Passado', 'Ao Ponto', 'Ao Ponto para Mal'],
-                        extras: [
-                            { name: 'Bacon Crocante Extra', price: 6.00 },
-                            { name: 'Maionese da Casa Extra (50ml)', price: 4.00 }
-                        ]
-                    },
-                    { 
-                        id: 102, 
-                        name: 'Combo Smash + Batata + Refri', 
-                        desc: 'Smash simples com queijo, porção de batata palito crocante e refrigerante lata 350ml.', 
-                        price: 36.90, 
-                        category: 'Combos em Promoção', 
-                        image: 'https://images.unsplash.com/photo-1610614819513-58e34989848b?w=500&auto=format&fit=crop&q=80',
-                        mandatoryTitle: 'Escolha seu Refrigerante',
-                        mandatoryOptions: ['Coca-Cola 350ml', 'Guaraná Antarctica 350ml', 'Fanta Laranja 350ml'],
-                        extras: [
-                            { name: 'Cheddar cremoso na batata', price: 5.00 }
-                        ]
-                    }
+                    { id: 101, name: 'RP Double Smash Cheese', desc: '2 hambúrgueres smash de 90g, duplo queijo prato no brioche.', price: 28.90, category: 'Mais Pedidos', active: true, image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&auto=format&fit=crop&q=80', mandatoryTitle: 'Ponto da Carne', mandatoryOptions: ['Bem Passado', 'Ao Ponto'], extras: [{ name: 'Bacon Extra', price: 6.00 }] },
+                    { id: 102, name: 'Combo Smash + Batata + Refri', desc: 'Smash simples, batata frita e refrigerante lata.', price: 36.90, category: 'Combos', active: true, image: 'https://images.unsplash.com/photo-1610614819513-58e34989848b?w=500&auto=format&fit=crop&q=80', mandatoryTitle: 'Escolha o Refri', mandatoryOptions: ['Coca-Cola', 'Guaraná'], extras: [] }
                 ]
             },
             {
                 id: 2,
+                cnpj: '98.765.432/0001-10',
                 name: 'Marmitaria da Vila (Redentora)',
                 category: 'marmita',
                 rating: 4.8,
@@ -674,121 +871,44 @@
                 deliveryFee: 4.50,
                 minOrder: 18.00,
                 isSuper: true,
+                status: 'active',
                 image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop&q=80',
-                banner: 'https://images.unsplash.com/photo-1543339308-43e59d6b73a6?w=1000&auto=format&fit=crop&q=80',
                 menu: [
-                    { 
-                        id: 201, 
-                        name: 'Marmita Bife à Parmegiana', 
-                        desc: 'Bife bovino empanado crocante, coberto com queijo e molho caseiro. Acompanha arroz, feijão e fritas.', 
-                        price: 24.90, 
-                        category: 'Pratos do Dia', 
-                        image: 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=500&auto=format&fit=crop&q=80',
-                        mandatoryTitle: 'Escolha o Tamanho',
-                        mandatoryOptions: ['Marmita Média (550g)', 'Marmita Grande (750g) (+ R$ 5)'],
-                        extras: [
-                            { name: 'Ovo frito extra', price: 3.00 },
-                            { name: 'Salada de alface e tomate separada', price: 4.00 }
-                        ]
-                    },
-                    { 
-                        id: 202, 
-                        name: 'Feijoada Completa Individual', 
-                        desc: 'Feijoada tradicional com carnes nobres, arroz branco, couve refogada, farofa temperada e torresmo.', 
-                        price: 29.90, 
-                        category: 'Pratos do Dia', 
-                        image: 'https://images.unsplash.com/photo-1574484284002-952d92456975?w=500&auto=format&fit=crop&q=80',
-                        mandatoryTitle: 'Pimenta',
-                        mandatoryOptions: ['Sem Pimenta', 'Pimenta Moderada', 'Pimenta Forte'],
-                        extras: []
-                    }
-                ]
-            },
-            {
-                id: 3,
-                name: 'Pizzaria Rio Preto Tradicional',
-                category: 'pizza',
-                rating: 4.7,
-                time: '40-50 min',
-                deliveryFee: 0.00,
-                minOrder: 35.00,
-                isSuper: false,
-                image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500&auto=format&fit=crop&q=80',
-                banner: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=1000&auto=format&fit=crop&q=80',
-                menu: [
-                    { 
-                        id: 301, 
-                        name: 'Pizza Calabresa Especial (Grande)', 
-                        desc: 'Massa artesanal assada em forno a lenha, molho de tomate fresco, calabresa fatiada, cebola e azeitonas.', 
-                        price: 49.90, 
-                        category: 'Pizzas Salgadas', 
-                        image: 'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=500&auto=format&fit=crop&q=80',
-                        mandatoryTitle: 'Borda Recheada',
-                        mandatoryOptions: ['Sem Borda', 'Borda de Catupiry (+ R$ 8)', 'Borda de Cheddar (+ R$ 8)'],
-                        extras: [
-                            { name: 'Extra de Queijo Mussarela', price: 9.00 }
-                        ]
-                    }
-                ]
-            },
-            {
-                id: 4,
-                name: 'Sushi Yuzu Rio Preto',
-                category: 'japanese',
-                rating: 4.9,
-                time: '35-45 min',
-                deliveryFee: 6.00,
-                minOrder: 40.00,
-                isSuper: true,
-                image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=500&auto=format&fit=crop&q=80',
-                banner: 'https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=1000&auto=format&fit=crop&q=80',
-                menu: [
-                    { 
-                        id: 401, 
-                        name: 'Combo Hot Roll 16 Peças', 
-                        desc: 'Empanados crocantes recheados com salmão e cream cheese, finalizados com molho tarê e gergelim.', 
-                        price: 39.90, 
-                        category: 'Combos', 
-                        image: 'https://images.unsplash.com/photo-1617196034796-73dfa7b1fd56?w=500&auto=format&fit=crop&q=80',
-                        mandatoryTitle: 'Acompanhamento',
-                        mandatoryOptions: ['Shoyu Tradicional', 'Shoyu Light', 'Sem Shoyu'],
-                        extras: [
-                            { name: 'Tarê extra em bisnaga', price: 4.00 },
-                            { name: 'Wasabi e Gengibre extra', price: 3.50 }
-                        ]
-                    }
+                    { id: 201, name: 'Marmita Bife à Parmegiana', desc: 'Bife empanado, queijo, molho, arroz, feijão e fritas.', price: 24.90, category: 'Pratos do Dia', active: true, image: 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=500&auto=format&fit=crop&q=80', mandatoryTitle: 'Tamanho', mandatoryOptions: ['Média (550g)', 'Grande (750g) (+ R$ 5)'], extras: [{ name: 'Ovo Frito Extra', price: 3.00 }] }
                 ]
             }
         ];
 
-        // CONTROLLER CLASS
-        class RPFoodApp {
+        // MAIN CONTROLLER CLASS
+        class RPFoodSystem {
             constructor() {
-                this.restaurants = [...restaurantsData];
+                this.currentRole = 'client'; // 'client', 'restaurant', 'admin'
                 this.selectedCategory = 'all';
                 this.activeQuickFilters = new Set();
+                
+                // Persistence State
+                this.restaurants = JSON.parse(localStorage.getItem('rpfood_tenants')) || initialRestaurants;
+                this.orders = JSON.parse(localStorage.getItem('rpfood_orders_all')) || [];
+                this.currentAddress = JSON.parse(localStorage.getItem('rpfood_address')) || { street: 'Av. Alberto Andaló', number: '3000', comp: 'Apt 12', neighborhood: 'Centro' };
+
+                // Client State
+                this.cart = [];
+                this.appliedCoupon = null;
                 this.currentRestaurant = null;
                 this.selectedProduct = null;
                 this.modalProductQty = 1;
-
-                this.cart = [];
-                this.appliedCoupon = null;
-
-                this.currentAddress = JSON.parse(localStorage.getItem('rpfood_address')) || {
-                    street: 'Av. Alberto Andaló',
-                    number: '3000',
-                    comp: 'Apt 12',
-                    neighborhood: 'Centro'
-                };
-
-                this.ordersHistory = JSON.parse(localStorage.getItem('rpfood_orders')) || [];
                 this.activeOrder = null;
-                this.trackingInterval = null;
+
+                // Gestor State
+                this.managedRestaurantId = this.restaurants[0]?.id || 1;
+                this.activeGestorTab = 'orders';
 
                 this.init();
             }
 
             init() {
+                this.saveState();
+                this.switchRole('client');
                 this.renderAddressHeader();
                 this.renderCategories();
                 this.renderQuickFilters();
@@ -796,23 +916,58 @@
                 this.updateCartUI();
             }
 
-            // --- ADDRESS MANAGEMENT ---
+            saveState() {
+                localStorage.setItem('rpfood_tenants', JSON.stringify(this.restaurants));
+                localStorage.setItem('rpfood_orders_all', JSON.stringify(this.orders));
+            }
+
+            // --- ROLE & VIEW NAVIGATION ---
+            switchRole(role) {
+                this.currentRole = role;
+
+                // Update Role Bar UI
+                document.querySelectorAll('.role-btn').forEach(btn => btn.classList.remove('bg-rpfood-red', 'text-white'));
+                document.getElementById(`btn-role-${role}`).classList.add('bg-rpfood-red', 'text-white');
+
+                // Toggle Wrappers
+                document.getElementById('wrapper-client').classList.add('hidden');
+                document.getElementById('wrapper-restaurant').classList.add('hidden');
+                document.getElementById('wrapper-admin').classList.add('hidden');
+
+                // Client Header Visibility
+                const clientHeader = document.getElementById('client-header');
+
+                if (role === 'client') {
+                    clientHeader.classList.remove('hidden');
+                    document.getElementById('wrapper-client').classList.remove('hidden');
+                } else if (role === 'restaurant') {
+                    clientHeader.classList.add('hidden');
+                    document.getElementById('wrapper-restaurant').classList.remove('hidden');
+                    this.renderGestorDashboard();
+                } else if (role === 'admin') {
+                    clientHeader.classList.add('hidden');
+                    document.getElementById('wrapper-admin').classList.remove('hidden');
+                    this.renderAdminDashboard();
+                }
+            }
+
+            showClientView(view) {
+                document.getElementById('client-home').classList.add('hidden');
+                document.getElementById('client-restaurant').classList.add('hidden');
+                document.getElementById('client-tracking').classList.add('hidden');
+
+                document.getElementById(`client-${view}`).classList.remove('hidden');
+                window.scrollTo(0, 0);
+            }
+
+            // --- CLIENT: ADDRESS & MARKETPLACE ---
             renderAddressHeader() {
                 const text = `${this.currentAddress.street}, ${this.currentAddress.number} - ${this.currentAddress.neighborhood}`;
                 document.getElementById('header-address-text').innerText = text;
             }
 
-            openAddressModal() {
-                document.getElementById('addr-street').value = this.currentAddress.street;
-                document.getElementById('addr-number').value = this.currentAddress.number;
-                document.getElementById('addr-comp').value = this.currentAddress.comp || '';
-                document.getElementById('addr-neighborhood').value = this.currentAddress.neighborhood;
-                document.getElementById('address-modal').classList.remove('hidden');
-            }
-
-            closeAddressModal() {
-                document.getElementById('address-modal').classList.add('hidden');
-            }
+            openAddressModal() { document.getElementById('address-modal').classList.remove('hidden'); }
+            closeAddressModal() { document.getElementById('address-modal').classList.add('hidden'); }
 
             saveAddress() {
                 const street = document.getElementById('addr-street').value.trim();
@@ -820,10 +975,7 @@
                 const comp = document.getElementById('addr-comp').value.trim();
                 const neighborhood = document.getElementById('addr-neighborhood').value.trim();
 
-                if (!street || !number || !neighborhood) {
-                    this.showToast('Preencha os campos obrigatórios (*)', 'error');
-                    return;
-                }
+                if (!street || !number || !neighborhood) return this.showToast('Preencha os campos obrigatórios (*)', 'error');
 
                 this.currentAddress = { street, number, comp, neighborhood };
                 localStorage.setItem('rpfood_address', JSON.stringify(this.currentAddress));
@@ -832,27 +984,9 @@
                 this.showToast('Endereço atualizado!');
             }
 
-            // --- NAVIGATION BETWEEN VIEWS ---
-            showView(viewName) {
-                document.getElementById('view-home').classList.add('hidden');
-                document.getElementById('view-restaurant').classList.add('hidden');
-                document.getElementById('view-tracking').classList.add('hidden');
-
-                if (viewName === 'home') {
-                    document.getElementById('view-home').classList.remove('hidden');
-                } else if (viewName === 'restaurant') {
-                    document.getElementById('view-restaurant').classList.remove('hidden');
-                } else if (viewName === 'tracking') {
-                    document.getElementById('view-tracking').classList.remove('hidden');
-                }
-                window.scrollTo(0, 0);
-            }
-
-            // --- RENDER HOME CONTENT ---
             renderCategories() {
-                const container = document.getElementById('categories-container');
-                container.innerHTML = categoriesData.map(cat => `
-                    <button onclick="app.filterCategory('${cat.id}')" class="flex flex-col items-center justify-center min-w-[76px] p-3 rounded-2xl border transition-all duration-200 ${this.selectedCategory === cat.id ? 'bg-rpfood-red text-white border-rpfood-red shadow-md scale-105' : 'bg-white border-gray-100 text-gray-700 hover:bg-gray-50'}">
+                document.getElementById('categories-container').innerHTML = initialCategories.map(cat => `
+                    <button onclick="app.filterCategory('${cat.id}')" class="flex flex-col items-center justify-center min-w-[76px] p-3 rounded-2xl border transition-all ${this.selectedCategory === cat.id ? 'bg-rpfood-red text-white border-rpfood-red shadow-md' : 'bg-white border-gray-100 text-gray-700 hover:bg-gray-50'}">
                         <i class="fa-solid ${cat.icon} text-lg mb-1"></i>
                         <span class="text-[11px] font-bold whitespace-nowrap">${cat.name}</span>
                     </button>
@@ -860,112 +994,62 @@
             }
 
             renderQuickFilters() {
-                const container = document.getElementById('quick-filters-container');
-                container.innerHTML = quickFiltersData.map(f => {
-                    const isActive = this.activeQuickFilters.has(f.id);
-                    return `
-                        <button onclick="app.toggleQuickFilter('${f.id}')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition whitespace-nowrap ${isActive ? 'bg-gray-900 text-white border-gray-900 shadow-sm' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100'}">
-                            <i class="fa-solid ${f.icon} text-xs"></i>
-                            <span>${f.label}</span>
-                        </button>
-                    `;
-                }).join('');
+                document.getElementById('quick-filters-container').innerHTML = initialQuickFilters.map(f => `
+                    <button onclick="app.toggleQuickFilter('${f.id}')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition whitespace-nowrap ${this.activeQuickFilters.has(f.id) ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100'}">
+                        <i class="fa-solid ${f.icon}"></i>
+                        <span>${f.label}</span>
+                    </button>
+                `).join('');
             }
 
-            toggleQuickFilter(filterId) {
-                if (this.activeQuickFilters.has(filterId)) {
-                    this.activeQuickFilters.delete(filterId);
-                } else {
-                    this.activeQuickFilters.add(filterId);
-                }
-                this.renderQuickFilters();
-                this.renderRestaurants();
-            }
-
-            filterCategory(catId) {
-                this.selectedCategory = catId;
-                this.renderCategories();
-                this.renderRestaurants();
-            }
+            filterCategory(catId) { this.selectedCategory = catId; this.renderCategories(); this.renderRestaurants(); }
+            toggleQuickFilter(fId) { this.activeQuickFilters.has(fId) ? this.activeQuickFilters.delete(fId) : this.activeQuickFilters.add(fId); this.renderQuickFilters(); this.renderRestaurants(); }
 
             handleSearch(query) {
                 const q = query.toLowerCase().trim();
-                if (!q) {
-                    this.restaurants = [...restaurantsData];
-                } else {
-                    this.restaurants = restaurantsData.filter(r => 
-                        r.name.toLowerCase().includes(q) || 
-                        r.menu.some(m => m.name.toLowerCase().includes(q) || m.desc.toLowerCase().includes(q))
-                    );
-                }
-                this.renderRestaurants();
+                const filtered = this.restaurants.filter(r => r.name.toLowerCase().includes(q) || r.menu.some(m => m.name.toLowerCase().includes(q)));
+                this.renderRestaurants(filtered);
             }
 
             sortRestaurants(criteria) {
-                if (criteria === 'rating') {
-                    this.restaurants.sort((a, b) => b.rating - a.rating);
-                } else if (criteria === 'time') {
-                    this.restaurants.sort((a, b) => parseInt(a.time) - parseInt(b.time));
-                } else if (criteria === 'fee') {
-                    this.restaurants.sort((a, b) => a.deliveryFee - b.deliveryFee);
-                }
+                if (criteria === 'rating') this.restaurants.sort((a,b) => b.rating - a.rating);
+                if (criteria === 'time') this.restaurants.sort((a,b) => parseInt(a.time) - parseInt(b.time));
+                if (criteria === 'fee') this.restaurants.sort((a,b) => a.deliveryFee - b.deliveryFee);
                 this.renderRestaurants();
             }
 
-            renderRestaurants() {
+            renderRestaurants(list = this.restaurants) {
+                let filtered = list.filter(r => r.status === 'active');
+
+                if (this.selectedCategory !== 'all') filtered = filtered.filter(r => r.category === this.selectedCategory);
+                if (this.activeQuickFilters.has('free-delivery')) filtered = filtered.filter(r => r.deliveryFee === 0);
+                if (this.activeQuickFilters.has('super')) filtered = filtered.filter(r => r.isSuper);
+
                 const grid = document.getElementById('restaurants-grid');
-                let filtered = this.restaurants;
-
-                // Category Filter
-                if (this.selectedCategory !== 'all') {
-                    filtered = filtered.filter(r => r.category === this.selectedCategory);
-                }
-
-                // Quick Filters
-                if (this.activeQuickFilters.has('free-delivery')) {
-                    filtered = filtered.filter(r => r.deliveryFee === 0);
-                }
-                if (this.activeQuickFilters.has('super')) {
-                    filtered = filtered.filter(r => r.isSuper);
-                }
-                if (this.activeQuickFilters.has('top-rated')) {
-                    filtered = filtered.filter(r => r.rating >= 4.8);
-                }
-                if (this.activeQuickFilters.has('under-20')) {
-                    filtered = filtered.filter(r => r.menu.some(m => m.price <= 20));
-                }
-
                 if (filtered.length === 0) {
-                    grid.innerHTML = `
-                        <div class="col-span-full text-center py-12 bg-white rounded-3xl border border-gray-100 p-8">
-                            <i class="fa-solid fa-store-slash text-4xl text-gray-300 mb-3 block"></i>
-                            <p class="font-bold text-gray-700">Nenhum restaurante encontrado com os filtros selecionados.</p>
-                            <button onclick="app.resetFilters()" class="mt-3 text-xs text-rpfood-red font-bold underline">Limpar Filtros</button>
-                        </div>
-                    `;
+                    grid.innerHTML = `<div class="col-span-full text-center py-12 bg-white rounded-3xl border border-gray-100 p-8 text-gray-500 font-bold">Nenhum restaurante encontrado.</div>`;
                     return;
                 }
 
                 grid.innerHTML = filtered.map(r => `
-                    <div onclick="app.openRestaurant(${r.id})" class="bg-white rounded-3xl border border-gray-100 p-4 hover:shadow-xl transition duration-300 cursor-pointer flex gap-4 group relative overflow-hidden">
+                    <div onclick="app.openRestaurant(${r.id})" class="bg-white rounded-3xl border border-gray-100 p-4 hover:shadow-xl transition cursor-pointer flex gap-4 group">
                         <div class="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden flex-shrink-0 bg-gray-100">
                             <img src="${r.image}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" alt="${r.name}">
-                            ${r.isSuper ? `<span class="absolute top-1.5 left-1.5 bg-rpfood-red text-white text-[9px] font-black px-2 py-0.5 rounded-md shadow">Super</span>` : ''}
+                            ${r.isSuper ? `<span class="absolute top-1.5 left-1.5 bg-rpfood-red text-white text-[9px] font-black px-2 py-0.5 rounded shadow">Super</span>` : ''}
                         </div>
                         <div class="flex-1 flex flex-col justify-between py-0.5">
                             <div>
-                                <h3 class="font-black text-gray-900 group-hover:text-rpfood-red transition text-sm sm:text-base leading-snug">${r.name}</h3>
+                                <h3 class="font-black text-gray-900 group-hover:text-rpfood-red transition text-sm sm:text-base">${r.name}</h3>
                                 <div class="flex items-center gap-1.5 text-xs text-yellow-500 font-bold mt-1">
-                                    <i class="fa-solid fa-star"></i>
-                                    <span>${r.rating.toFixed(1)}</span>
+                                    <i class="fa-solid fa-star"></i><span>${r.rating.toFixed(1)}</span>
                                     <span class="text-gray-300">•</span>
                                     <span class="text-gray-500 font-medium">${r.time}</span>
                                 </div>
                             </div>
                             <div class="text-xs text-gray-500 font-medium flex items-center justify-between border-t border-gray-100 pt-2 mt-2">
-                                <span>Ped. Min. R$ ${r.minOrder.toFixed(2).replace('.', ',')}</span>
+                                <span>Ped. Min. R$ ${r.minOrder.toFixed(2)}</span>
                                 <span class="${r.deliveryFee === 0 ? 'text-green-600 font-extrabold' : 'font-bold text-gray-700'}">
-                                    ${r.deliveryFee === 0 ? 'Grátis' : 'R$ ' + r.deliveryFee.toFixed(2).replace('.', ',')}
+                                    ${r.deliveryFee === 0 ? 'Grátis' : 'R$ ' + r.deliveryFee.toFixed(2)}
                                 </span>
                             </div>
                         </div>
@@ -973,91 +1057,58 @@
                 `).join('');
             }
 
-            resetFilters() {
-                this.selectedCategory = 'all';
-                this.activeQuickFilters.clear();
-                this.restaurants = [...restaurantsData];
-                this.renderCategories();
-                this.renderQuickFilters();
-                this.renderRestaurants();
-            }
-
-            // --- RESTAURANT MENU VIEW ---
             openRestaurant(id) {
                 this.currentRestaurant = this.restaurants.find(r => r.id === id);
                 if (!this.currentRestaurant) return;
 
-                this.renderRestaurantHeader();
-                this.renderRestaurantMenu();
-                this.showView('restaurant');
-            }
-
-            renderRestaurantHeader() {
                 const r = this.currentRestaurant;
-                const container = document.getElementById('restaurant-header-info');
-                container.innerHTML = `
+                document.getElementById('restaurant-header-info').innerHTML = `
                     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div class="flex items-center gap-4">
                             <img src="${r.image}" class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover shadow-sm border border-gray-100" alt="${r.name}">
                             <div>
-                                <div class="flex items-center gap-2">
-                                    <h1 class="text-xl sm:text-2xl font-black text-gray-900">${r.name}</h1>
-                                    ${r.isSuper ? '<span class="bg-red-100 text-rpfood-red text-[10px] font-black px-2 py-0.5 rounded-full">Super Restaurante</span>' : ''}
-                                </div>
-                                <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500 mt-1.5 font-medium">
+                                <h1 class="text-xl sm:text-2xl font-black text-gray-900">${r.name}</h1>
+                                <div class="flex items-center gap-2 text-xs text-gray-500 mt-1 font-medium">
                                     <span class="text-yellow-500 font-extrabold"><i class="fa-solid fa-star"></i> ${r.rating.toFixed(1)}</span>
-                                    <span>•</span>
-                                    <span>${r.time}</span>
-                                    <span>•</span>
-                                    <span>Frete: ${r.deliveryFee === 0 ? '<strong class="text-green-600">Grátis</strong>' : 'R$ ' + r.deliveryFee.toFixed(2)}</span>
+                                    <span>•</span><span>${r.time}</span>
+                                    <span>•</span><span>Frete: ${r.deliveryFee === 0 ? '<strong class="text-green-600">Grátis</strong>' : 'R$ ' + r.deliveryFee.toFixed(2)}</span>
                                 </div>
                             </div>
-                        </div>
-                        <div class="bg-gray-50 p-3 rounded-2xl border border-gray-200/80 text-xs text-gray-600 space-y-1 w-full sm:w-auto text-right">
-                            <p><strong>Pedido Mínimo:</strong> R$ ${r.minOrder.toFixed(2).replace('.', ',')}</p>
-                            <p class="text-green-600 font-bold"><i class="fa-solid fa-circle text-[8px]"></i> Loja Aberta agora</p>
                         </div>
                     </div>
                 `;
-            }
 
-            renderRestaurantMenu() {
-                const r = this.currentRestaurant;
-                const categories = [...new Set(r.menu.map(i => i.category))];
+                const activeMenu = r.menu.filter(i => i.active !== false);
+                const categories = [...new Set(activeMenu.map(i => i.category))];
 
-                // Render Tabs
-                const nav = document.getElementById('menu-categories-nav');
-                nav.innerHTML = categories.map((cat, idx) => `
-                    <a href="#menu-cat-${idx}" class="py-3 text-xs font-extrabold text-gray-600 hover:text-rpfood-red whitespace-nowrap border-b-2 border-transparent hover:border-rpfood-red transition">${cat}</a>
+                document.getElementById('menu-categories-nav').innerHTML = categories.map((cat, idx) => `
+                    <a href="#cat-${idx}" class="py-3 text-xs font-extrabold text-gray-600 hover:text-rpfood-red whitespace-nowrap border-b-2 border-transparent hover:border-rpfood-red transition">${cat}</a>
                 `).join('');
 
-                // Render Menu Items
-                const itemsContainer = document.getElementById('restaurant-menu-items');
-                itemsContainer.innerHTML = categories.map((cat, idx) => {
-                    const items = r.menu.filter(i => i.category === cat);
-                    return `
-                        <div id="menu-cat-${idx}">
-                            <h3 class="text-base sm:text-lg font-black text-gray-900 mb-3">${cat}</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                ${items.map(item => `
-                                    <div onclick="app.openProductModal(${item.id})" class="bg-white rounded-2xl border border-gray-100 p-4 hover:border-red-200 transition duration-200 flex justify-between gap-4 cursor-pointer group shadow-sm hover:shadow-md">
-                                        <div class="flex-1 flex flex-col justify-between">
-                                            <div>
-                                                <h4 class="font-bold text-sm text-gray-900 group-hover:text-rpfood-red transition">${item.name}</h4>
-                                                <p class="text-xs text-gray-400 line-clamp-2 mt-1 leading-relaxed">${item.desc}</p>
-                                            </div>
-                                            <span class="font-black text-sm text-gray-900 mt-3">R$ ${item.price.toFixed(2).replace('.', ',')}</span>
+                document.getElementById('restaurant-menu-items').innerHTML = categories.map((cat, idx) => `
+                    <div id="cat-${idx}">
+                        <h3 class="text-base font-black text-gray-900 mb-3">${cat}</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            ${activeMenu.filter(i => i.category === cat).map(item => `
+                                <div onclick="app.openProductModal(${item.id})" class="bg-white rounded-2xl border border-gray-100 p-4 hover:border-red-200 transition flex justify-between gap-4 cursor-pointer group shadow-sm">
+                                    <div class="flex-1 flex flex-col justify-between">
+                                        <div>
+                                            <h4 class="font-bold text-sm text-gray-900 group-hover:text-rpfood-red transition">${item.name}</h4>
+                                            <p class="text-xs text-gray-400 line-clamp-2 mt-1">${item.desc}</p>
                                         </div>
-                                        <img src="${item.image}" class="w-24 h-24 rounded-xl object-cover flex-shrink-0" alt="${item.name}">
+                                        <span class="font-black text-sm text-gray-900 mt-3">R$ ${item.price.toFixed(2)}</span>
                                     </div>
-                                `).join('')}
-                            </div>
+                                    <img src="${item.image}" class="w-24 h-24 rounded-xl object-cover flex-shrink-0" alt="${item.name}">
+                                </div>
+                            `).join('')}
                         </div>
-                    `;
-                }).join('');
+                    </div>
+                `).join('');
+
+                this.showClientView('restaurant');
             }
 
-            // --- PRODUCT CUSTOMIZER MODAL ---
+            // --- CLIENT: PRODUCT MODAL & CART ---
             openProductModal(productId) {
                 this.selectedProduct = this.currentRestaurant.menu.find(p => p.id === productId);
                 if (!this.selectedProduct) return;
@@ -1066,48 +1117,44 @@
                 document.getElementById('modal-product-img').src = this.selectedProduct.image;
                 document.getElementById('modal-product-title').innerText = this.selectedProduct.name;
                 document.getElementById('modal-product-desc').innerText = this.selectedProduct.desc;
-                document.getElementById('modal-product-price').innerText = `A partir de R$ ${this.selectedProduct.price.toFixed(2).replace('.', ',')}`;
+                document.getElementById('modal-product-price').innerText = `A partir de R$ ${this.selectedProduct.price.toFixed(2)}`;
                 document.getElementById('modal-product-qty').innerText = '1';
                 document.getElementById('modal-product-obs').value = '';
 
-                // Mandatory options
-                const mandContainer = document.getElementById('modal-mandatory-options');
-                if (this.selectedProduct.mandatoryOptions && this.selectedProduct.mandatoryOptions.length) {
-                    mandContainer.innerHTML = this.selectedProduct.mandatoryOptions.map((opt, i) => `
+                // Mandatory Options
+                const mand = document.getElementById('modal-mandatory-options');
+                if (this.selectedProduct.mandatoryOptions?.length) {
+                    mand.innerHTML = this.selectedProduct.mandatoryOptions.map((opt, i) => `
                         <label class="flex items-center justify-between text-xs p-2.5 bg-gray-50 rounded-xl cursor-pointer border hover:bg-gray-100">
-                            <div class="flex items-center gap-2">
-                                <input type="radio" name="mandatory_option" value="${opt}" ${i === 0 ? 'checked' : ''} class="text-rpfood-red focus:ring-rpfood-red">
-                                <span class="font-bold text-gray-800">${opt}</span>
-                            </div>
+                            <span class="font-bold text-gray-800">${opt}</span>
+                            <input type="radio" name="mandatory_opt" value="${opt}" ${i===0?'checked':''} class="text-rpfood-red focus:ring-rpfood-red">
                         </label>
                     `).join('');
                 } else {
-                    mandContainer.innerHTML = `<p class="text-xs text-gray-400">Sem opções obrigatórias para este prato.</p>`;
+                    mand.innerHTML = `<p class="text-xs text-gray-400">Sem opções obrigatórias.</p>`;
                 }
 
                 // Extras
-                const extrasContainer = document.getElementById('modal-product-extras');
-                if (this.selectedProduct.extras && this.selectedProduct.extras.length) {
-                    extrasContainer.innerHTML = this.selectedProduct.extras.map(ex => `
+                const ext = document.getElementById('modal-product-extras');
+                if (this.selectedProduct.extras?.length) {
+                    ext.innerHTML = this.selectedProduct.extras.map(ex => `
                         <label class="flex items-center justify-between text-xs p-2.5 bg-gray-50 rounded-xl cursor-pointer border hover:bg-gray-100">
+                            <span class="font-bold text-gray-800">${ex.name}</span>
                             <div class="flex items-center gap-2">
-                                <input type="checkbox" value="${ex.price}" data-name="${ex.name}" onchange="app.updateModalTotalPrice()" class="extra-checkbox rounded text-rpfood-red focus:ring-rpfood-red">
-                                <span class="font-bold text-gray-800">${ex.name}</span>
+                                <span class="font-bold text-gray-600">+ R$ ${ex.price.toFixed(2)}</span>
+                                <input type="checkbox" value="${ex.price}" data-name="${ex.name}" onchange="app.updateModalTotalPrice()" class="extra-cb rounded text-rpfood-red focus:ring-rpfood-red">
                             </div>
-                            <span class="font-bold text-gray-600">+ R$ ${ex.price.toFixed(2).replace('.', ',')}</span>
                         </label>
                     `).join('');
                 } else {
-                    extrasContainer.innerHTML = `<p class="text-xs text-gray-400">Sem adicionais para este item.</p>`;
+                    ext.innerHTML = `<p class="text-xs text-gray-400">Sem adicionais.</p>`;
                 }
 
                 this.updateModalTotalPrice();
                 document.getElementById('product-modal').classList.remove('hidden');
             }
 
-            closeProductModal() {
-                document.getElementById('product-modal').classList.add('hidden');
-            }
+            closeProductModal() { document.getElementById('product-modal').classList.add('hidden'); }
 
             updateModalQty(change) {
                 this.modalProductQty = Math.max(1, this.modalProductQty + change);
@@ -1116,65 +1163,52 @@
             }
 
             updateModalTotalPrice() {
-                let extrasTotal = 0;
-                document.querySelectorAll('.extra-checkbox:checked').forEach(cb => {
-                    extrasTotal += parseFloat(cb.value);
-                });
-
-                const unit = this.selectedProduct.price + extrasTotal;
-                const total = unit * this.modalProductQty;
-                document.getElementById('modal-product-total-price').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+                let extras = 0;
+                document.querySelectorAll('.extra-cb:checked').forEach(cb => extras += parseFloat(cb.value));
+                const total = (this.selectedProduct.price + extras) * this.modalProductQty;
+                document.getElementById('modal-product-total-price').innerText = `R$ ${total.toFixed(2)}`;
             }
 
             confirmAddToCart() {
-                // Check if cart has items from another restaurant (iFood Rule)
+                // SINGLE-RESTAURANT GUARD LOGIC
                 if (this.cart.length > 0 && this.cart[0].restaurantId !== this.currentRestaurant.id) {
-                    if (confirm(`Sua sacola já contém itens do restaurante "${this.cart[0].restaurantName}". Deseja limpar a sacola e adicionar este item de "${this.currentRestaurant.name}"?`)) {
+                    if (confirm(`Sua sacola já contém itens do restaurante "${this.cart[0].restaurantName}". Deseja limpar e adicionar de "${this.currentRestaurant.name}"?`)) {
                         this.cart = [];
                     } else {
                         return;
                     }
                 }
 
-                // Get mandatory choice
-                const selectedMandatory = document.querySelector('input[name="mandatory_option"]:checked');
-                const mandatoryText = selectedMandatory ? selectedMandatory.value : '';
-
-                // Get extras
-                let selectedExtras = [];
+                const mandatoryOpt = document.querySelector('input[name="mandatory_opt"]:checked')?.value || '';
+                let extras = [];
                 let extrasCost = 0;
-                document.querySelectorAll('.extra-checkbox:checked').forEach(cb => {
+                document.querySelectorAll('.extra-cb:checked').forEach(cb => {
                     extrasCost += parseFloat(cb.value);
-                    selectedExtras.push(cb.getAttribute('data-name'));
+                    extras.push(cb.getAttribute('data-name'));
                 });
 
-                const obs = document.getElementById('modal-product-obs').value.trim();
                 const unitPrice = this.selectedProduct.price + extrasCost;
-
-                const cartItem = {
+                this.cart.push({
                     cartItemId: Date.now(),
                     restaurantId: this.currentRestaurant.id,
                     restaurantName: this.currentRestaurant.name,
                     product: this.selectedProduct,
                     qty: this.modalProductQty,
-                    mandatoryOption: mandatoryText,
-                    extras: selectedExtras,
+                    mandatoryOption: mandatoryOpt,
+                    extras: extras,
                     unitPrice: unitPrice,
                     totalPrice: unitPrice * this.modalProductQty,
-                    obs: obs
-                };
+                    obs: document.getElementById('modal-product-obs').value.trim()
+                });
 
-                this.cart.push(cartItem);
                 this.closeProductModal();
                 this.updateCartUI();
                 this.showToast('Item adicionado à sua sacola!');
             }
 
-            // --- CART & DRAWER MANAGEMENT ---
             toggleCartDrawer() {
-                const overlay = document.getElementById('cart-drawer-overlay');
                 const drawer = document.getElementById('cart-drawer');
-
+                const overlay = document.getElementById('cart-drawer-overlay');
                 if (drawer.classList.contains('translate-x-full')) {
                     overlay.classList.remove('hidden');
                     setTimeout(() => overlay.classList.remove('opacity-0'), 10);
@@ -1186,367 +1220,427 @@
                 }
             }
 
-            updateCartItemQty(cartItemId, change) {
-                const item = this.cart.find(i => i.cartItemId === cartItemId);
+            updateCartItemQty(id, change) {
+                const item = this.cart.find(i => i.cartItemId === id);
                 if (!item) return;
-
                 item.qty += change;
-                if (item.qty <= 0) {
-                    this.cart = this.cart.filter(i => i.cartItemId !== cartItemId);
-                } else {
-                    item.totalPrice = item.unitPrice * item.qty;
-                }
+                if (item.qty <= 0) this.cart = this.cart.filter(i => i.cartItemId !== id);
+                else item.totalPrice = item.unitPrice * item.qty;
                 this.updateCartUI();
             }
 
             updateCartUI() {
+                document.getElementById('cart-badge').innerText = this.cart.reduce((a, b) => a + b.qty, 0);
                 const container = document.getElementById('cart-items-container');
-                const badge = document.getElementById('cart-badge');
-                
-                const totalItemsCount = this.cart.reduce((acc, i) => acc + i.qty, 0);
-                badge.innerText = totalItemsCount;
 
                 if (this.cart.length === 0) {
-                    container.innerHTML = `
-                        <div class="text-center py-20 text-gray-400 space-y-3">
-                            <i class="fa-solid fa-bag-shopping text-5xl text-gray-200 block"></i>
-                            <p class="font-bold text-gray-600">Sua sacola está vazia</p>
-                            <p class="text-xs">Adicione itens para fazer seu pedido em Rio Preto.</p>
-                        </div>
-                    `;
+                    container.innerHTML = `<div class="text-center py-20 text-gray-400 font-bold">Sua sacola está vazia</div>`;
                     document.getElementById('cart-footer').classList.add('hidden');
                     document.getElementById('min-order-bar-container').classList.add('hidden');
                     return;
                 }
 
                 document.getElementById('cart-footer').classList.remove('hidden');
-
-                // Render Items
                 container.innerHTML = this.cart.map(item => `
                     <div class="flex justify-between items-start border-b border-gray-100 pb-3 text-xs">
                         <div class="flex-1 pr-2">
                             <h4 class="font-extrabold text-gray-900">${item.product.name}</h4>
-                            ${item.mandatoryOption ? `<p class="text-[11px] text-gray-500 font-medium">Opção: ${item.mandatoryOption}</p>` : ''}
+                            ${item.mandatoryOption ? `<p class="text-[11px] text-gray-500">Opção: ${item.mandatoryOption}</p>` : ''}
                             ${item.extras.length ? `<p class="text-[11px] text-gray-400">+ ${item.extras.join(', ')}</p>` : ''}
-                            ${item.obs ? `<p class="text-[10px] text-gray-400 italic">" Obs: ${item.obs} "</p>` : ''}
-                            <span class="font-bold text-rpfood-red mt-1 block">R$ ${item.unitPrice.toFixed(2).replace('.', ',')}</span>
+                            <span class="font-bold text-rpfood-red mt-1 block">R$ ${item.unitPrice.toFixed(2)}</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <div class="flex items-center border border-gray-200 rounded-lg bg-white">
-                                <button onclick="app.updateCartItemQty(${item.cartItemId}, -1)" class="px-2 py-1 text-gray-500 hover:bg-gray-100 font-black text-xs">-</button>
-                                <span class="px-2 font-black text-xs">${item.qty}</span>
-                                <button onclick="app.updateCartItemQty(${item.cartItemId}, 1)" class="px-2 py-1 text-gray-500 hover:bg-gray-100 font-black text-xs">+</button>
-                            </div>
-                            <span class="font-black text-gray-900 text-xs w-14 text-right">R$ ${item.totalPrice.toFixed(2).replace('.', ',')}</span>
+                            <button onclick="app.updateCartItemQty(${item.cartItemId}, -1)" class="px-2 py-1 bg-gray-100 font-black">-</button>
+                            <span class="font-bold text-xs">${item.qty}</span>
+                            <button onclick="app.updateCartItemQty(${item.cartItemId}, 1)" class="px-2 py-1 bg-gray-100 font-black">+</button>
                         </div>
                     </div>
                 `).join('');
 
-                // Calculate Totals & Minimum Order Progress
-                const subtotal = this.cart.reduce((acc, i) => acc + i.totalPrice, 0);
-                const rest = restaurantsData.find(r => r.id === this.cart[0].restaurantId);
+                const subtotal = this.cart.reduce((a, b) => a + b.totalPrice, 0);
+                const rest = this.restaurants.find(r => r.id === this.cart[0].restaurantId);
                 const deliveryFee = rest ? rest.deliveryFee : 0;
                 const minOrder = rest ? rest.minOrder : 0;
 
                 // Minimum Order Bar
-                const minBarContainer = document.getElementById('min-order-bar-container');
-                minBarContainer.classList.remove('hidden');
-                document.getElementById('min-order-val-text').innerText = `R$ ${minOrder.toFixed(2).replace('.', ',')}`;
-                
+                document.getElementById('min-order-bar-container').classList.remove('hidden');
+                document.getElementById('min-order-val-text').innerText = `R$ ${minOrder.toFixed(2)}`;
                 const percent = Math.min(100, (subtotal / minOrder) * 100);
                 document.getElementById('min-order-progress-fill').style.width = `${percent}%`;
 
-                const checkoutBtn = document.getElementById('btn-proceed-checkout');
-                const alertMsg = document.getElementById('min-order-alert');
-
+                const btnCheckout = document.getElementById('btn-proceed-checkout');
                 if (subtotal < minOrder) {
-                    const diff = minOrder - subtotal;
-                    alertMsg.innerText = `Faltam R$ ${diff.toFixed(2).replace('.', ',')} para atingir o valor mínimo.`;
-                    checkoutBtn.disabled = true;
-                    checkoutBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    document.getElementById('min-order-alert').innerText = `Faltam R$ ${(minOrder - subtotal).toFixed(2)} para o mínimo.`;
+                    btnCheckout.disabled = true;
+                    btnCheckout.classList.add('opacity-50', 'cursor-not-allowed');
                 } else {
-                    alertMsg.innerText = '✓ Valor mínimo atingido!';
-                    alertMsg.className = 'text-[10px] text-green-600 font-bold mt-1 text-center';
-                    checkoutBtn.disabled = false;
-                    checkoutBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    document.getElementById('min-order-alert').innerText = '✓ Valor mínimo atingido!';
+                    btnCheckout.disabled = false;
+                    btnCheckout.classList.remove('opacity-50', 'cursor-not-allowed');
                 }
 
-                // Coupon Calculation
                 let discount = 0;
                 if (this.appliedCoupon === 'RPFOOD10') discount = 10.00;
-                if (this.appliedCoupon === 'PRIMEIRACOMPRA') discount = subtotal * 0.15;
                 if (this.appliedCoupon === 'FRETEGRATIS') discount = deliveryFee;
 
                 const total = Math.max(0, subtotal + deliveryFee - discount);
-
-                document.getElementById('cart-subtotal').innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
-                document.getElementById('cart-delivery-fee').innerText = deliveryFee === 0 ? 'GRÁTIS' : `R$ ${deliveryFee.toFixed(2).replace('.', ',')}`;
-
-                if (discount > 0) {
-                    document.getElementById('discount-row').classList.remove('hidden');
-                    document.getElementById('cart-discount').innerText = `- R$ ${discount.toFixed(2).replace('.', ',')}`;
-                } else {
-                    document.getElementById('discount-row').classList.add('hidden');
-                }
-
-                document.getElementById('cart-total').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+                document.getElementById('cart-subtotal').innerText = `R$ ${subtotal.toFixed(2)}`;
+                document.getElementById('cart-delivery-fee').innerText = deliveryFee === 0 ? 'GRÁTIS' : `R$ ${deliveryFee.toFixed(2)}`;
+                document.getElementById('cart-total').innerText = `R$ ${total.toFixed(2)}`;
             }
 
             applyCoupon() {
                 const code = document.getElementById('coupon-input').value.trim().toUpperCase();
-                const msg = document.getElementById('coupon-message');
-
-                if (['RPFOOD10', 'PRIMEIRACOMPRA', 'FRETEGRATIS'].includes(code)) {
+                if (['RPFOOD10', 'FRETEGRATIS'].includes(code)) {
                     this.appliedCoupon = code;
-                    msg.innerText = '✓ Cupom aplicado!';
-                    msg.className = 'text-[11px] font-bold text-green-600';
-                    msg.classList.remove('hidden');
+                    this.showToast('Cupom Aplicado!');
                     this.updateCartUI();
                 } else {
-                    msg.innerText = 'Cupom inválido. Tente RPFOOD10';
-                    msg.className = 'text-[11px] font-bold text-rpfood-red';
-                    msg.classList.remove('hidden');
+                    this.showToast('Cupom inválido!', 'error');
                 }
             }
 
-            // --- CHECKOUT & ORDER SUBMISSION ---
+            // --- CLIENT: CHECKOUT & PLACING ORDER ---
             openCheckoutModal() {
-                if (this.cart.length === 0) return;
                 this.toggleCartDrawer();
-
-                const subtotal = this.cart.reduce((acc, i) => acc + i.totalPrice, 0);
-                const rest = restaurantsData.find(r => r.id === this.cart[0].restaurantId);
+                const subtotal = this.cart.reduce((a, b) => a + b.totalPrice, 0);
+                const rest = this.restaurants.find(r => r.id === this.cart[0].restaurantId);
                 const deliveryFee = rest ? rest.deliveryFee : 0;
 
-                let discount = 0;
-                if (this.appliedCoupon === 'RPFOOD10') discount = 10.00;
-                if (this.appliedCoupon === 'PRIMEIRACOMPRA') discount = subtotal * 0.15;
-                if (this.appliedCoupon === 'FRETEGRATIS') discount = deliveryFee;
-
-                const total = Math.max(0, subtotal + deliveryFee - discount);
-
-                document.getElementById('checkout-address-line1').innerText = `${this.currentAddress.street}, ${this.currentAddress.number} ${this.currentAddress.comp ? '('+this.currentAddress.comp+')' : ''}`;
-                document.getElementById('checkout-address-line2').innerText = `${this.currentAddress.neighborhood} - São José do Rio Preto / SP`;
-
-                document.getElementById('checkout-subtotal').innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
-                document.getElementById('checkout-delivery').innerText = deliveryFee === 0 ? 'GRÁTIS' : `R$ ${deliveryFee.toFixed(2).replace('.', ',')}`;
-
-                if (discount > 0) {
-                    document.getElementById('checkout-discount-row').classList.remove('hidden');
-                    document.getElementById('checkout-discount').innerText = `- R$ ${discount.toFixed(2).replace('.', ',')}`;
-                } else {
-                    document.getElementById('checkout-discount-row').classList.add('hidden');
-                }
-
-                document.getElementById('checkout-total').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+                document.getElementById('checkout-address-line1').innerText = `${this.currentAddress.street}, ${this.currentAddress.number}`;
+                document.getElementById('checkout-address-line2').innerText = `${this.currentAddress.neighborhood} - Rio Preto / SP`;
+                document.getElementById('checkout-subtotal').innerText = `R$ ${subtotal.toFixed(2)}`;
+                document.getElementById('checkout-delivery').innerText = `R$ ${deliveryFee.toFixed(2)}`;
+                document.getElementById('checkout-total').innerText = `R$ ${(subtotal + deliveryFee).toFixed(2)}`;
                 document.getElementById('checkout-modal').classList.remove('hidden');
             }
 
-            closeCheckoutModal() {
-                document.getElementById('checkout-modal').classList.add('hidden');
-            }
-
-            handlePaymentChange(val) {
-                document.getElementById('cash-change-box').classList.toggle('hidden', val !== 'Dinheiro');
-                document.getElementById('pix-info-box').classList.toggle('hidden', val !== 'PIX');
-            }
+            closeCheckoutModal() { document.getElementById('checkout-modal').classList.add('hidden'); }
+            handlePaymentChange(val) { document.getElementById('cash-change-box').classList.toggle('hidden', val !== 'Dinheiro'); }
 
             placeOrder() {
                 this.closeCheckoutModal();
+                const rest = this.restaurants.find(r => r.id === this.cart[0].restaurantId);
+                const subtotal = this.cart.reduce((a, b) => a + b.totalPrice, 0);
 
-                const orderId = '#' + Math.floor(1000 + Math.random() * 9000);
-                const confirmCode = Math.floor(1000 + Math.random() * 9000);
-
-                this.activeOrder = {
-                    id: orderId,
-                    confirmCode: confirmCode,
-                    date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                const newOrder = {
+                    id: '#' + Math.floor(1000 + Math.random() * 9000),
+                    confirmCode: Math.floor(1000 + Math.random() * 9000),
+                    restaurantId: rest.id,
+                    restaurantName: rest.name,
                     items: [...this.cart],
-                    restaurant: restaurantsData.find(r => r.id === this.cart[0].restaurantId),
-                    status: 1 // 1: Confirmed, 2: Preparing, 3: Delivering, 4: Delivered
+                    subtotal: subtotal,
+                    deliveryFee: rest.deliveryFee,
+                    total: subtotal + rest.deliveryFee,
+                    paymentMethod: document.querySelector('input[name="payment"]:checked').value,
+                    status: 1, // 1: Confirmed, 2: Preparing, 3: Delivering, 4: Delivered
+                    createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                 };
 
-                // Save into Orders History
-                this.ordersHistory.unshift(this.activeOrder);
-                localStorage.setItem('rpfood_orders', JSON.stringify(this.ordersHistory));
+                this.orders.unshift(newOrder);
+                this.activeOrder = newOrder;
+                this.saveState();
 
-                // Clear cart
                 this.cart = [];
-                this.appliedCoupon = null;
                 this.updateCartUI();
 
-                // Show tracking active button
                 document.getElementById('active-order-btn').classList.remove('hidden');
                 document.getElementById('active-order-btn').classList.add('flex');
 
-                this.startOrderTrackingSimulation();
-                this.showView('tracking');
+                this.renderTrackingOrder();
+                this.showClientView('tracking');
                 this.showToast('Pedido realizado com sucesso!', 'success');
             }
 
-            // --- REAL-TIME ORDER TRACKING SIMULATION ---
-            startOrderTrackingSimulation() {
-                const order = this.activeOrder;
-                document.getElementById('track-order-id').innerText = order.id;
-                document.getElementById('track-confirm-code').innerText = order.confirmCode;
+            renderTrackingOrder() {
+                if (!this.activeOrder) return;
+                const ord = this.activeOrder;
 
-                // Render items
-                document.getElementById('track-items-list').innerHTML = order.items.map(i => `
+                document.getElementById('track-order-id').innerText = ord.id;
+                document.getElementById('track-confirm-code').innerText = ord.confirmCode;
+                document.getElementById('track-items-list').innerHTML = ord.items.map(i => `
                     <li class="py-2 flex justify-between">
                         <span>${i.qty}x ${i.product.name}</span>
-                        <span class="font-bold">R$ ${i.totalPrice.toFixed(2).replace('.', ',')}</span>
+                        <span class="font-bold">R$ ${i.totalPrice.toFixed(2)}</span>
                     </li>
                 `).join('');
 
-                let currentStep = 1;
-                this.updateTrackingProgressUI(currentStep);
-
-                if (this.trackingInterval) clearInterval(this.trackingInterval);
-
-                // Progress every 7 seconds
-                this.trackingInterval = setInterval(() => {
-                    currentStep++;
-                    if (currentStep > 4) {
-                        clearInterval(this.trackingInterval);
-                    } else {
-                        this.updateTrackingProgressUI(currentStep);
-                    }
-                }, 7000);
+                this.updateTrackingUI(ord.status);
             }
 
-            updateTrackingProgressUI(step) {
+            updateTrackingUI(status) {
                 const fill = document.getElementById('tracking-progress-fill');
-                const statusBadge = document.getElementById('track-status-badge');
+                const badge = document.getElementById('track-status-badge');
 
-                const s1 = document.getElementById('step-1-icon');
-                const s2 = document.getElementById('step-2-icon');
-                const s3 = document.getElementById('step-3-icon');
-                const s4 = document.getElementById('step-4-icon');
+                const steps = [1, 2, 3, 4].map(s => document.getElementById(`step-${s}-icon`));
 
-                if (step === 1) {
-                    fill.style.width = '25%';
-                    statusBadge.innerText = 'Confirmado';
-                    s1.className = 'w-10 h-10 rounded-full bg-rpfood-red text-white flex items-center justify-center font-bold text-sm border-4 border-white shadow-md';
-                } else if (step === 2) {
-                    fill.style.width = '50%';
-                    statusBadge.innerText = 'Em Preparação';
-                    statusBadge.className = 'bg-orange-100 text-orange-800 text-xs font-extrabold px-3.5 py-1.5 rounded-full border border-orange-200';
-                    s2.className = 'w-10 h-10 rounded-full bg-rpfood-red text-white flex items-center justify-center font-bold text-sm border-4 border-white shadow-md';
-                    s2.innerHTML = '<i class="fa-solid fa-utensils animate-spin"></i>';
-                    this.addChatMessage("Sua refeição está sendo preparada com carinho pela cozinha!");
-                } else if (step === 3) {
-                    fill.style.width = '75%';
-                    statusBadge.innerText = 'Saiu para Entrega';
-                    statusBadge.className = 'bg-blue-100 text-blue-800 text-xs font-extrabold px-3.5 py-1.5 rounded-full border border-blue-200';
-                    s3.className = 'w-10 h-10 rounded-full bg-rpfood-red text-white flex items-center justify-center font-bold text-sm border-4 border-white shadow-md';
-                    s3.innerHTML = '<i class="fa-solid fa-motorcycle animate-bounce"></i>';
-                    document.getElementById('track-eta').innerText = '10 - 15 min';
-                    this.addChatMessage("Lucas já pegou seu pedido e está a caminho da sua casa!");
-                } else if (step === 4) {
-                    fill.style.width = '100%';
-                    statusBadge.innerText = 'Entregue!';
-                    statusBadge.className = 'bg-green-100 text-green-800 text-xs font-extrabold px-3.5 py-1.5 rounded-full border border-green-200';
-                    s4.className = 'w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center font-bold text-sm border-4 border-white shadow-md';
-                    s4.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
-                    document.getElementById('track-eta').innerText = 'Pedido Entregue!';
-                    this.addChatMessage("Entregue! Bom apetite!");
-                }
+                fill.style.width = `${status * 25}%`;
+
+                if (status === 1) badge.innerText = 'Confirmado';
+                if (status === 2) badge.innerText = 'Em Preparo';
+                if (status === 3) badge.innerText = 'A Caminho';
+                if (status === 4) badge.innerText = 'Entregue!';
+
+                steps.forEach((stepEl, idx) => {
+                    if (idx + 1 <= status) {
+                        stepEl.className = 'w-10 h-10 rounded-full bg-rpfood-red text-white flex items-center justify-center font-bold text-sm border-4 border-white shadow-md';
+                    } else {
+                        stepEl.className = 'w-10 h-10 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center font-bold text-sm border-4 border-white shadow-md';
+                    }
+                });
             }
 
-            // --- CHAT SIMULATION ---
             sendChatMessage() {
                 const input = document.getElementById('chat-input');
                 const text = input.value.trim();
                 if (!text) return;
 
-                const messagesContainer = document.getElementById('chat-messages');
-                messagesContainer.innerHTML += `
-                    <div class="bg-rpfood-red text-white p-2 rounded-lg text-right ml-auto max-w-[85%] font-medium">
-                        ${text}
-                    </div>
-                `;
+                const msgBox = document.getElementById('chat-messages');
+                msgBox.innerHTML += `<div class="bg-rpfood-red text-white p-2 rounded-lg text-right ml-auto max-w-[85%] font-medium">${text}</div>`;
                 input.value = '';
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-                // Auto reply simulation
-                setTimeout(() => {
-                    this.addChatMessage("Obrigado pelo contato! Estou a caminho.");
-                }, 1500);
+                msgBox.scrollTop = msgBox.scrollHeight;
             }
 
-            addChatMessage(msg) {
-                const messagesContainer = document.getElementById('chat-messages');
-                messagesContainer.innerHTML += `
-                    <div class="bg-white p-2 rounded-lg border border-gray-200 max-w-[85%] text-gray-700">
-                        ${msg}
-                    </div>
-                `;
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            }
-
-            // --- ORDERS HISTORY & REORDER ---
             openOrdersModal() {
                 const list = document.getElementById('orders-history-list');
-                if (this.ordersHistory.length === 0) {
-                    list.innerHTML = `<p class="text-xs text-gray-400 text-center py-8">Nenhum pedido realizado ainda.</p>`;
-                } else {
-                    list.innerHTML = this.ordersHistory.map(ord => `
-                        <div class="bg-gray-50 rounded-2xl p-3.5 border border-gray-200/80 text-xs space-y-2">
-                            <div class="flex justify-between items-center font-black">
-                                <span>${ord.restaurant.name}</span>
-                                <span class="text-gray-400">${ord.date}</span>
-                            </div>
-                            <p class="text-gray-500">${ord.items.map(i => i.qty + 'x ' + i.product.name).join(', ')}</p>
-                            <div class="flex justify-between items-center pt-2 border-t border-gray-200">
-                                <span class="font-bold text-gray-900">${ord.id}</span>
-                                <button onclick="app.reorder('${ord.id}')" class="bg-rpfood-red text-white font-bold px-3 py-1.5 rounded-lg hover:bg-rpfood-darkRed transition text-[11px]">
-                                    Pedir Novamente
-                                </button>
-                            </div>
+                list.innerHTML = this.orders.length === 0 ? '<p class="text-center text-xs text-gray-400">Sem pedidos recentes.</p>' : this.orders.map(o => `
+                    <div class="bg-gray-50 p-3 rounded-2xl border text-xs space-y-1">
+                        <div class="flex justify-between font-bold">
+                            <span>${o.restaurantName}</span>
+                            <span>${o.total.toFixed(2)}</span>
                         </div>
-                    `).join('');
-                }
+                        <p class="text-gray-400">${o.items.map(i => i.qty + 'x ' + i.product.name).join(', ')}</p>
+                    </div>
+                `).join('');
                 document.getElementById('orders-modal').classList.remove('hidden');
             }
 
-            closeOrdersModal() {
-                document.getElementById('orders-modal').classList.add('hidden');
+            closeOrdersModal() { document.getElementById('orders-modal').classList.add('hidden'); }
+
+            // --- RESTAURANT MANAGER (GESTOR) LOGIC ---
+            renderGestorDashboard() {
+                const select = document.getElementById('gestor-rest-select');
+                select.innerHTML = this.restaurants.map(r => `<option value="${r.id}" ${r.id === this.managedRestaurantId ? 'selected':''}>${r.name}</option>`).join('');
+
+                const currentRest = this.restaurants.find(r => r.id === this.managedRestaurantId);
+                if (!currentRest) return;
+
+                document.getElementById('gestor-rest-name').innerText = currentRest.name;
+
+                // Calculate Metrics
+                const restOrders = this.orders.filter(o => o.restaurantId === currentRest.id);
+                const sales = restOrders.reduce((a, b) => a + b.total, 0);
+                document.getElementById('gestor-metric-sales').innerText = `R$ ${sales.toFixed(2)}`;
+                document.getElementById('gestor-metric-orders').innerText = restOrders.length;
+                document.getElementById('gestor-metric-ticket').innerText = restOrders.length > 0 ? `R$ ${(sales / restOrders.length).toFixed(2)}` : 'R$ 0,00';
+                document.getElementById('gestor-metric-rating').innerText = `★ ${currentRest.rating.toFixed(1)}`;
+
+                this.renderGestorOrdersKanban();
+                this.renderGestorMenu();
             }
 
-            reorder(orderId) {
-                const order = this.ordersHistory.find(o => o.id === orderId);
-                if (!order) return;
-
-                this.cart = [...order.items];
-                this.closeOrdersModal();
-                this.updateCartUI();
-                this.toggleCartDrawer();
-                this.showToast('Itens adicionados à sua sacola!');
+            switchManagedRestaurant(restId) {
+                this.managedRestaurantId = parseInt(restId);
+                this.renderGestorDashboard();
             }
 
-            // --- TOAST NOTIFICATIONS ---
-            showToast(message, type = 'success') {
-                const toast = document.getElementById('toast');
-                const icon = document.getElementById('toast-icon');
-                document.getElementById('toast-message').innerText = message;
+            switchGestorTab(tab) {
+                this.activeGestorTab = tab;
+                document.getElementById('gestor-tab-orders').classList.toggle('hidden', tab !== 'orders');
+                document.getElementById('gestor-tab-menu').classList.toggle('hidden', tab !== 'menu');
 
-                if (type === 'error') {
-                    icon.className = 'fa-solid fa-circle-xmark text-red-400 text-base';
-                } else {
-                    icon.className = 'fa-solid fa-circle-check text-green-400 text-base';
+                document.getElementById('tab-btn-orders').className = tab === 'orders' ? 'pb-3 text-sm font-black border-b-2 border-rpfood-red text-rpfood-red' : 'pb-3 text-sm font-bold border-b-2 border-transparent text-gray-500';
+                document.getElementById('tab-btn-menu').className = tab === 'menu' ? 'pb-3 text-sm font-black border-b-2 border-rpfood-red text-rpfood-red' : 'pb-3 text-sm font-bold border-b-2 border-transparent text-gray-500';
+            }
+
+            renderGestorOrdersKanban() {
+                const restOrders = this.orders.filter(o => o.restaurantId === this.managedRestaurantId);
+
+                [1, 2, 3, 4].forEach(status => {
+                    const col = document.getElementById(`kanban-col-${status}`);
+                    const filtered = restOrders.filter(o => o.status === status);
+                    document.getElementById(`count-kanban-${status}`).innerText = filtered.length;
+
+                    col.innerHTML = filtered.map(o => `
+                        <div class="bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm text-xs space-y-2">
+                            <div class="flex justify-between font-black">
+                                <span class="text-gray-900">${o.id}</span>
+                                <span class="text-rpfood-red">R$ ${o.total.toFixed(2)}</span>
+                            </div>
+                            <p class="text-gray-500 font-medium">${o.items.map(i => i.qty + 'x ' + i.product.name).join(', ')}</p>
+                            <div class="border-t pt-2 flex justify-between items-center">
+                                <span class="text-[10px] text-gray-400 font-bold">${o.paymentMethod}</span>
+                                <div class="flex gap-1">
+                                    ${status < 4 ? `<button onclick="app.updateOrderStatus('${o.id}', ${status + 1})" class="bg-green-600 text-white font-black text-[10px] px-2 py-1 rounded">Avançar →</button>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                });
+            }
+
+            updateOrderStatus(orderId, newStatus) {
+                const ord = this.orders.find(o => o.id === orderId);
+                if (!ord) return;
+                ord.status = newStatus;
+                this.saveState();
+
+                if (this.activeOrder && this.activeOrder.id === orderId) {
+                    this.activeOrder.status = newStatus;
+                    this.renderTrackingOrder();
                 }
 
+                this.renderGestorOrdersKanban();
+                this.showToast(`Status do pedido ${orderId} atualizado!`);
+            }
+
+            renderGestorMenu() {
+                const currentRest = this.restaurants.find(r => r.id === this.managedRestaurantId);
+                if (!currentRest) return;
+
+                const list = document.getElementById('gestor-menu-list');
+                list.innerHTML = currentRest.menu.map(item => `
+                    <div class="flex items-center justify-between p-3.5 border rounded-2xl bg-gray-50 text-xs">
+                        <div class="flex items-center gap-3">
+                            <img src="${item.image}" class="w-12 h-12 rounded-xl object-cover" alt="${item.name}">
+                            <div>
+                                <h4 class="font-bold text-gray-900">${item.name}</h4>
+                                <span class="text-gray-400">${item.category} • R$ ${item.price.toFixed(2)}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button onclick="app.toggleProductActive(${item.id})" class="px-3 py-1.5 rounded-xl font-extrabold ${item.active !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                                ${item.active !== false ? 'Ativo (Em estoque)' : 'Pausado'}
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            toggleProductActive(prodId) {
+                const currentRest = this.restaurants.find(r => r.id === this.managedRestaurantId);
+                const prod = currentRest.menu.find(p => p.id === prodId);
+                if (!prod) return;
+                prod.active = prod.active === false ? true : false;
+                this.saveState();
+                this.renderGestorMenu();
+            }
+
+            openNewProductModal() { document.getElementById('modal-new-product').classList.remove('hidden'); }
+            closeNewProductModal() { document.getElementById('modal-new-product').classList.add('hidden'); }
+
+            saveNewProduct() {
+                const name = document.getElementById('prod-name').value.trim();
+                const desc = document.getElementById('prod-desc').value.trim();
+                const price = parseFloat(document.getElementById('prod-price').value);
+                const cat = document.getElementById('prod-cat').value.trim() || 'Geral';
+                const img = document.getElementById('prod-img').value.trim() || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop&q=80';
+
+                if (!name || isNaN(price)) return this.showToast('Preencha os campos válidos', 'error');
+
+                const currentRest = this.restaurants.find(r => r.id === this.managedRestaurantId);
+                currentRest.menu.push({
+                    id: Date.now(),
+                    name, desc, price, category: cat, active: true, image: img, extras: []
+                });
+
+                this.saveState();
+                this.closeNewProductModal();
+                this.renderGestorMenu();
+                this.showToast('Novo prato cadastrado com sucesso!');
+            }
+
+            // --- ADMIN MASTER LOGIC ---
+            renderAdminDashboard() {
+                const gmv = this.orders.reduce((a, b) => a + b.total, 0);
+                const commission = gmv * 0.12;
+
+                document.getElementById('admin-gmv').innerText = `R$ ${gmv.toFixed(2)}`;
+                document.getElementById('admin-commission').innerText = `R$ ${commission.toFixed(2)}`;
+                document.getElementById('admin-total-orders').innerText = this.orders.length;
+                document.getElementById('admin-total-tenants').innerText = this.restaurants.length;
+
+                const table = document.getElementById('admin-tenants-table');
+                table.innerHTML = this.restaurants.map(r => `
+                    <tr>
+                        <td class="p-3 font-bold text-gray-900">${r.name}</td>
+                        <td class="p-3">${r.cnpj || '12.345.678/0001-00'}<br><span class="text-gray-400 capitalize">${r.category}</span></td>
+                        <td class="p-3">Frete: R$ ${r.deliveryFee.toFixed(2)}<br>Mín: R$ ${r.minOrder.toFixed(2)}</td>
+                        <td class="p-3">
+                            <span class="px-2 py-1 rounded-full text-[10px] font-black ${r.status === 'active' ? 'bg-green-100 text-green-700':'bg-red-100 text-red-700'}">
+                                ${r.status === 'active' ? 'Ativa' : 'Bloqueada'}
+                            </span>
+                        </td>
+                        <td class="p-3 text-right space-x-2">
+                            <button onclick="app.toggleTenantStatus(${r.id})" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg font-bold">
+                                ${r.status === 'active' ? 'Bloquear' : 'Ativar'}
+                            </button>
+                            <button onclick="app.accessAsRestaurant(${r.id})" class="px-2.5 py-1 bg-rpfood-red text-white rounded-lg font-bold">
+                                Gerenciar
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            toggleTenantStatus(id) {
+                const rest = this.restaurants.find(r => r.id === id);
+                if (!rest) return;
+                rest.status = rest.status === 'active' ? 'blocked' : 'active';
+                this.saveState();
+                this.renderAdminDashboard();
+                this.renderRestaurants();
+            }
+
+            accessAsRestaurant(id) {
+                this.managedRestaurantId = id;
+                this.switchRole('restaurant');
+            }
+
+            openNewTenantModal() { document.getElementById('modal-new-tenant').classList.remove('hidden'); }
+            closeNewTenantModal() { document.getElementById('modal-new-tenant').classList.add('hidden'); }
+
+            saveNewTenant() {
+                const name = document.getElementById('tenant-name').value.trim();
+                const cnpj = document.getElementById('tenant-cnpj').value.trim();
+                const category = document.getElementById('tenant-category').value;
+                const fee = parseFloat(document.getElementById('tenant-fee').value) || 0;
+                const min = parseFloat(document.getElementById('tenant-min').value) || 0;
+                const time = document.getElementById('tenant-time').value.trim() || '30-40 min';
+                const image = document.getElementById('tenant-image').value.trim() || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500&auto=format&fit=crop&q=80';
+
+                if (!name || !cnpj) return this.showToast('Preencha os campos obrigatórios (*)', 'error');
+
+                const newTenant = {
+                    id: Date.now(),
+                    cnpj, name, category, rating: 5.0, time, deliveryFee: fee, minOrder: min,
+                    isSuper: true, status: 'active', image, menu: []
+                };
+
+                this.restaurants.push(newTenant);
+                this.saveState();
+                this.closeNewTenantModal();
+                this.renderAdminDashboard();
+                this.renderRestaurants();
+                this.showToast('Nova empresa parceira cadastrada!');
+            }
+
+            // --- TOAST FEEDBACK ---
+            showToast(msg, type = 'success') {
+                const toast = document.getElementById('toast');
+                const icon = document.getElementById('toast-icon');
+                document.getElementById('toast-message').innerText = msg;
+
+                icon.className = type === 'error' ? 'fa-solid fa-circle-xmark text-red-400 text-base' : 'fa-solid fa-circle-check text-green-400 text-base';
                 toast.classList.remove('translate-y-24', 'opacity-0');
-                setTimeout(() => {
-                    toast.classList.add('translate-y-24', 'opacity-0');
-                }, 3000);
+                setTimeout(() => toast.classList.add('translate-y-24', 'opacity-0'), 3000);
             }
         }
 
-        // INIT APP ON WINDOW LOAD
+        // INITIALIZE APPLICATION
         let app;
         window.onload = function () {
-            app = new RPFoodApp();
+            app = new RPFoodSystem();
         };
     </script>
 </body>
